@@ -1,0 +1,97 @@
+IN,OUT,CROP
+1,241,Corn
+2,47,Cotton
+4,47,Sorghum
+5,241,Soybeans
+6,47,Sunflower
+10,47,Peanuts
+11,47,Tobacco
+12,47,Sweet Corn
+13,47,Pop or Orn Corn
+14,47,Mint
+21,47,Barley
+22,47,Durum Wheat
+23,47,Spring Wheat
+24,47,Winter Wheat
+25,47,Other Small Grains
+26,47,Dbl Crop WinWht/Soybeans
+27,47,Rye
+28,47,Oats
+29,47,Millet
+30,47,Speltz
+31,47,Canola
+32,47,Flaxseed
+33,47,Safflower
+34,47,Rape Seed
+35,47,Mustard
+38,47,Camelina
+39,47,Buckwheat
+41,47,Sugarbeets
+42,47,Dry Beans
+43,47,Potatoes
+44,47,Other Crops
+45,47,Sugarcane
+46,47,Sweet Potatoes
+47,47,Misc Vegs & Fruits
+48,47,Watermelons
+49,47,Onions
+50,47,Cucumbers
+51,47,Chick Peas
+52,47,Lentils
+53,47,Peas
+54,47,Tomatoes
+55,47,Caneberries
+56,47,Hops
+57,47,Herbs
+58,47,Clover/Wildflowers
+59,47,Sod/Grass Seed
+60,47,Switchgrass
+61,61,Fallow/Idle Cropland
+69,69,Grapes
+78,78,Table Grapes (CA only - OpenET)
+80,47,
+182,47,
+202,47,Tomatoes (in CA 2007)
+205,47,Triticale
+206,47,Carrots
+207,47,Asparagus
+208,47,Garlic
+209,47,Cantaloupes
+213,47,Honeydew Melons
+214,47,Broccoli
+216,47,Peppers
+219,47,Greens
+221,47,Strawberries
+222,47,Squash
+224,47,Vetch
+225,47,Dbl Crop WinWht/Corn
+226,47,Dbl Crop Oats/Corn
+227,47,Lettuce
+228,47,Dbl Crop Triticale/Corn
+229,47,Pumpkins
+230,47,Dbl Crop Lettuce/Durum Wht
+231,47,Dbl Crop Lettuce/Cantaloupe
+232,47,Dbl Crop Lettuce/Cotton
+233,47,Dbl Crop Lettuce/Barley
+234,47,Dbl Crop Durum Wht/Sorghum
+235,47,Dbl Crop Barley/Sorghum
+236,47,Dbl Crop WinWht/Sorghum
+237,47,Dbl Crop Barley/Corn
+238,47,Dbl Crop WinWht/Cotton
+239,47,Dbl Crop Soybeans/Cotton
+240,47,Dbl Crop Soybeans/Oats
+241,241,Dbl Crop Corn/Soybeans
+242,47,Blueberries
+243,47,Cabbage
+244,47,Cauliflower
+245,47,Celery
+246,47,Radishes
+247,47,Turnips
+248,47,Eggplants
+249,47,Gourds
+250,47,Cranberries
+254,47,Dbl Crop Barley/Soybeans
+# 3,3,Rice
+# 36,36,Alfalfa
+# 37,37,Other Hay/Non Alfalfa
+# 176,176,Grassland/Pasture
