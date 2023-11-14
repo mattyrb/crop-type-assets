@@ -351,30 +351,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 properties['cdl_ca_img_id'] = cdl_ca_img
 
 
-            # Attempt to use the year specific CDL images for pre2008 years
-            if year < 2008:
-                if year == 2005 and mgrs_tile not in ['11T', '12T']:
-                    # Don't use the 2005a image for Idaho tiles
-                    # First add the Mississippi 2005b image
-                    output_img.addBands(ee.Image(f'{cdl_coll_id}/2005b')
-                        .select(['cropland'], ['cdl_ms_img'])
-                    )
-                    # Then bring in the other 2005 image
-                    cdl_img_id = f'{cdl_coll_id}/2005a'
-                elif year == 2007:
-                    # Never use the California 2007b image
-                    cdl_img_id = f'{cdl_coll_id}/2007a'
-                else:
-                    cdl_img_id = f'{cdl_coll_id}/{year}'
-                cdl_state_img = ee.Image(cdl_img_id)\
-                    .select(['cropland'], ['cdl_state_img'])
-                output_img = output_img.addBands(cdl_state_img)
-                # CGM - Not sure what to set the property to here
-                # An MGRS tile could be a combination of a pre2008 state image
-                #   and a 2008 image
-                properties['cdl_state_img_id'] = cdl_img_id
-
-
             # For any years after the last available CDL year
             #   use the annual crop remapped version of the last year image
             # For pre-2008 years, use the annual crop remapped 2008 images
