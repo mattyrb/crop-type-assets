@@ -112,7 +112,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
         ee.Initialize(ee.ServiceAccountCredentials('', key_file=gee_key_file))
     else:
         ee.Initialize()
-    # ee.Number(1).getInfo()
 
 
     # Get current running tasks
@@ -376,12 +375,31 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
             # Add a CDL remapped version of the NALCMS 2020 image last
-            # Using 47 for the ag class
+            # Using 47 for the ag class for now
             # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
+            # TODO: Doublecheck remap values
             nalcms_cdl_remap = [
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-                [142, 142, 142, 141, 141, 143, 152, 152, 176, 176, 0, 0, 0, 195, 47, 131, 123, 111, 112],
+                [1, 142],   # Temperate or sub-polar needleleaf forest
+                [2, 142],   # Sub-polar taiga needleleaf forest
+                [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
+                [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
+                [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
+                [6, 143],   # Mixed forest
+                [7, 152],   # Tropical or sub-tropical shrubland
+                [8, 152],   # Temperate or sub-polar shrubland
+                [9, 176],   # Tropical or sub-tropical grassland
+                [10, 176],  # Temperate or sub-polar grassland
+                [11, 0],    # Sub-polar or polar shrubland-lichen-moss
+                [12, 0],    # Sub-polar or polar grassland-lichen-moss
+                [13, 0],    # Sub-polar or polar barren-lichen-moss
+                [14, 195],  # Wetland
+                [15, 47],   # Cropland
+                [16, 131],  # Barren lands
+                [17, 123],  # Urban and built-up
+                [18, 111],  # Water
+                [19, 112],  # Snow and ice
             ]
+            nalcms_cdl_remap = [[x[0], x[1]] for x in nalcms_cdl_remap]
             nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
             nalcms_img = (
                 ee.Image(nalcms_img_id)
@@ -392,7 +410,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             properties['nalcms_img'] = nalcms_img_id
 
 
-            # TODO: Figure out if firstNonNull will return first or last band first?
             output_img = (
                 output_img
                 .reduce(ee.Reducer.firstNonNull())
@@ -400,12 +417,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 .rename(['cropland'])
                 .set(properties)
             )
-            # output_img = (
-            #     ee.ImageCollection([crop_type_img, field_img])
-            #     .mosaic()
-            #     .updateMask(mgrs_mask_img)
-            #     .set(properties)
-            # )
 
             # Build export tasks
             task = ee.batch.Export.image.toAsset(
@@ -465,7 +476,7 @@ def mgrs_export_tiles(
     utm_property : str, optional
         UTM zone property in the MGRS feature collection (the default is 'wrs2').
     cell_size : float, optional
-        (the default is 30).
+        Cell size for transform and shape calculation (the default is 30).
 
     Returns
     ------
@@ -478,7 +489,9 @@ def mgrs_export_tiles(
     study_area_coll = ee.FeatureCollection(study_area_coll_id)
     if ((study_area_property == 'STUSPS') and
             ('CONUS' in [x.upper() for x in study_area_features])):
-        # Exclude AK, HI, AS, GU, PR, MP, VI, (but keep DC)
+        # Exclude AK, HI, AS, GU, PR, MP, VI
+        # We don't really need all the states since the MGRS tiles are large
+        #   but leaving as is for now
         study_area_features = [
             'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
             'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME',
