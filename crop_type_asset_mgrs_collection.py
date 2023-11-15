@@ -17,7 +17,7 @@ import openet.core.utils as utils
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
-TOOL_VERSION = '0.1.2'
+TOOL_VERSION = '0.2.0'
 
 
 def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_file=None):
@@ -43,13 +43,16 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     # Hardcoded parameters
     export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022b'
-    export_band_name = 'crop_type'
+    # export_band_name = 'crop_type'
 
     crop_type_folder_id = ('projects/earthengine-legacy/assets/'
                            'projects/openet/featureCollections/2022-03-15b')
 
-    mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zones'
-    mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zone_mask'
+    # Using ERA5-Land MGRS tiles to avoid clipping outside CONUS
+    mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zones'
+    mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zone_mask'
+    # mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zones'
+    # mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zone_mask'
 
     cdl_coll_id = 'USDA/NASS/CDL'
 
@@ -63,6 +66,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     study_area_features = 'CONUS'
     # study_area_features = 'AZ, CA, CO, ID, MT, NM, NV, OR, UT, WA, WY'
     # study_area_features = 'NV'
+
+    annual_remap_path = os.path.join(os.getcwd(), 'cdl_annual_crop_remap_table.csv')
 
     # year_min = 1997
     year_min = 2000
@@ -80,10 +85,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     # Load the CDL annual crop remap
     # TODO: Get the script path instead (in case it is different than the cwd)
-    remap_path = os.path.join(
-        os.path.dirname(os.getcwd()), 'crop_type', 'cdl_annual_crop_remap_table.csv'
-    )
-    remap_df = pd.read_csv(remap_path, comment='#').sort_values(by='IN')
+    remap_df = pd.read_csv(annual_remap_path, comment='#').sort_values(by='IN')
     cdl_annual_remap = dict(zip(remap_df.IN, remap_df.OUT))
     # Set all unassigned values to remap to themselves
     for cdl_code in set(range(1, 256)) - set(cdl_annual_remap.keys()):
@@ -271,10 +273,11 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Added the uint8 since image was coming back as a double
             field_img = (
                 field_coll
-                .filterMetadata(crop_type_field, 'greater_than', 0)
+                .filter(ee.Filter.gt(crop_type_field, 0))
                 .reduceToImage([crop_type_field], ee.Reducer.first())
                 .uint8()
             )
+            # .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
             output_img = output_img.addBands(field_img.rename(['fields']))
             properties['field_states'] = ','.join(field_states)
 
@@ -325,9 +328,11 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
             # For California, always use the annual remapped CDL
+            # This is different than the generic CDL section below where the
+            #   annual remap is only used for pre 2008 and current years
             # Use a 2008 remapped annual crop image for all pre-2008 years
             # For all years after the last available CDL year,
-            #   use a annual crop remapped version of the last CDL year
+            #   use an annual crop remapped version of the last CDL year
             # Never use the CA 2007 image
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year < 2008:
@@ -369,8 +374,22 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             output_img = output_img.addBands(cdl_img.rename(['cdl_conus_img']))
             properties['cdl_img_id'] = cdl_img_id
 
-            # pprint.pprint(output_img.getInfo())
-            # input('ENTER')
+
+            # Add a CDL remapped version of the NALCMS 2020 image last
+            # Using 47 for the ag class
+            # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
+            nalcms_cdl_remap = [
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+                [142, 142, 142, 141, 141, 143, 152, 152, 176, 176, 0, 0, 0, 195, 47, 131, 123, 111, 112],
+            ]
+            nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+            nalcms_img = (
+                ee.Image(nalcms_img_id)
+                .remap(nalcms_cdl_remap[0], nalcms_cdl_remap[1])
+                .rename(['nalcms_img'])
+            )
+            output_img = output_img.addBands(nalcms_img)
+            properties['nalcms_img'] = nalcms_img_id
 
 
             # TODO: Figure out if firstNonNull will return first or last band first?
