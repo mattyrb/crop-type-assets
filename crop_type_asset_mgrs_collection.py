@@ -76,11 +76,12 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     if not years:
         years = list(range(year_min, year_max+1))
     else:
-        years = sorted(list(set(
+        years = set(
             int(year) for year_str in years
             for year in utils.str_ranges_2_list(year_str)
             if ((year <= year_max) and (year >= year_min))
-        )))
+        )
+        years = sorted(list(years))
     logging.info(f'Years:  {", ".join(map(str, years))}')
 
     # Load the CDL annual crop remap
@@ -272,11 +273,10 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Added the uint8 since image was coming back as a double
             field_img = (
                 field_coll
-                .filter(ee.Filter.gt(crop_type_field, 0))
+                .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
                 .reduceToImage([crop_type_field], ee.Reducer.first())
                 .uint8()
             )
-            # .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
             output_img = output_img.addBands(field_img.rename(['fields']))
             properties['field_states'] = ','.join(field_states)
 
