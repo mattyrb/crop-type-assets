@@ -17,10 +17,10 @@ import openet.core.utils as utils
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
-TOOL_VERSION = '0.1.1'
+TOOL_VERSION = '0.2.0'
 
 
-def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=None):
+def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_file=None):
     """Build and ingest crop type MGRS tiles from a feature collection
 
     Parameters
@@ -42,73 +42,77 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
     logging.info('\nBuild crop type MGRS tiles from the crop feature collections')
 
     # Hardcoded parameters
-    export_coll_id = 'projects/earthengine-legacy/assets/' \
-                     'projects/openet/crop_type/v2022a'
-    # export_coll_id = 'projects/earthengine-legacy/assets/' \
-    #                  'projects/openet/crop_type/annual_provisional'
-    # export_coll_id = 'projects/earthengine-legacy/assets/' \
-    #                  'projects/openet/crop_type/annual'
-    export_band_name = 'crop_type'
+    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022b'
+    # export_band_name = 'crop_type'
 
-    crop_type_folder_id = 'projects/earthengine-legacy/assets/' \
-                          'projects/openet/featureCollections/2022-03-15b'
-    # crop_type_folder_id = 'projects/earthengine-legacy/assets/' \
-    #                       'projects/openet/field_boundaries/provisional'
+    crop_type_folder_id = ('projects/earthengine-legacy/assets/'
+                           'projects/openet/featureCollections/2022-03-15b')
 
-    mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/' \
-                       'projects/openet/mgrs/conus_gridmet/zones'
-    mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/' \
-                        'projects/openet/mgrs/conus_gridmet/zone_mask'
-
-    # For now, hardcode the study area as the CONUS
-    # Allow the user to set a subset of states also
-    # study_area_coll = projects/climate-engine/featureCollections/shp_new/cb_2017_us_state_5m
-    study_area_coll_id = 'TIGER/2018/States'
-    study_area_property = 'STUSPS'
-    study_area_features = 'CONUS'
-    # study_area_features = 'AZ, CA, CO, ID, MT, NM, NV, OR, UT, WA, WY'
-    # study_area_features = 'NV'
+    # Using ERA5-Land MGRS tiles to avoid clipping outside CONUS
+    mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zones'
+    mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zone_mask'
+    # mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zones'
+    # mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zone_mask'
 
     cdl_coll_id = 'USDA/NASS/CDL'
-    landiq_coll_id = 'projects/earthengine-legacy/assets/' \
-                     'projects/openet/crop_type/land_iq'
 
-    # year_min = 1997
+    landiq_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+
+    # The states collection is being used to select the field collections (by name)
+    states_coll_id = 'TIGER/2018/States'
+    states_name_property = 'STUSPS'
+
+    supported_mgrs_tiles = [
+        '10S', '10T', '10U', '11R', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
+        '13R', '13S', '13T', '13U', '14R', '14S', '14T', '14U', '15R', '15S', '15T', '15U',
+        '16R', '16S', '16T', '16U', '17R', '17S', '17T', '17U', '18S', '18T', '18U',
+        '19T', '19U'
+    ]
+    # supported_mgrs_tiles = [
+    #     '10S', '10T', '10U', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
+    #     '13R', '13S', '13T', '13U', '14R', '14S', '14T', '14U', '15R', '15S', '15T', '15U',
+    #     '16R', '16S', '16T', '16U', '17R', '17S', '17T', '17U', '18S', '18T', '19T',
+    # ]
+    mgrs_skip_list = []
+
+    annual_remap_path = os.path.join(os.getcwd(), 'cdl_annual_crop_remap_table.csv')
+
     year_min = 2000
     year_max = 2023
+
+    # Parse user inputs
     if not years:
         years = list(range(year_min, year_max+1))
     else:
-        years = sorted(list(set(
+        years = set(
             int(year) for year_str in years
             for year in utils.str_ranges_2_list(year_str)
             if ((year <= year_max) and (year >= year_min))
-        )))
-    logging.info(f'Years:  {", ".join(map(str, years))}')
+        )
+        years = sorted(list(years))
+    logging.info(f'Years:    {", ".join(map(str, years))}')
+
+    if mgrs_tiles:
+        mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
+        # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
+        logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
+
+    # Limit the MGRS tile list to the default tile list (if set)
+    # Otherwise just use the supported tile list
+    if mgrs_tiles and supported_mgrs_tiles:
+        mgrs_tiles = [mgrs for mgrs in mgrs_tiles if mgrs in supported_mgrs_tiles]
+    else:
+        mgrs_tiles = supported_mgrs_tiles[:]
+
 
     # Load the CDL annual crop remap
     # TODO: Get the script path instead (in case it is different than the cwd)
-    remap_path = os.path.join(
-        os.path.dirname(os.getcwd()), 'crop_type',
-        'cdl_annual_crop_remap_table.csv'
-    )
-    remap_df = pd.read_csv(remap_path, comment='#').sort_values(by='IN')
+    remap_df = pd.read_csv(annual_remap_path, comment='#').sort_values(by='IN')
     cdl_annual_remap = dict(zip(remap_df.IN, remap_df.OUT))
     # Set all unassigned values to remap to themselves
     for cdl_code in set(range(1, 256)) - set(cdl_annual_remap.keys()):
         cdl_annual_remap[cdl_code] = cdl_code
     remap_in, remap_out = map(list, zip(*cdl_annual_remap.items()))
-
-    # mgrs_skip_list = []
-    # utm_zones = []
-
-    # Parse user inputs
-    mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
-    # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
-    study_area_features = sorted([x.strip() for x in study_area_features.split(',')])
-    logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
-    logging.info(f'Features: {", ".join(study_area_features)}')
-    # input('ENTER')
 
 
     logging.info('\nInitializing Earth Engine')
@@ -118,7 +122,6 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
         ee.Initialize(ee.ServiceAccountCredentials('', key_file=gee_key_file))
     else:
         ee.Initialize()
-    ee.Number(1).getInfo()
 
 
     # Get current running tasks
@@ -150,12 +153,12 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
 
 
     # Get list of MGRS tiles that intersect the study area
+    # Intentionally using the MGRS collection as the study area collection
+    #   since the MGRS tile list has been filtered to the supported tiles
     logging.debug('\nBuilding export list')
     export_list = mgrs_export_tiles(
-        study_area_coll_id=study_area_coll_id,
+        study_area_coll_id=mgrs_ftr_coll_id,
         mgrs_coll_id=mgrs_ftr_coll_id,
-        study_area_property=study_area_property,
-        study_area_features=study_area_features,
         mgrs_tiles=mgrs_tiles,
         # mgrs_skip_list=mgrs_skip_list,
         # utm_zones=utm_zones,
@@ -163,8 +166,7 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
     if not export_list:
         logging.error('\nEmpty export list, exiting')
         return False
-    # export_list = sorted(export_list, reverse=reverse_flag,
-    #                      key=lambda i: i['index'])
+    # export_list = sorted(export_list, reverse=reverse_flag, key=lambda i: i['index'])
 
 
     # Get a list of the available state field feature collections
@@ -173,12 +175,10 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
         for asset in ee.data.listAssets({'parent': crop_type_folder_id})['assets']
         if asset['type'] == 'TABLE'
     ]
-    logging.info('\nStates with field feature collections:'
-                 '\n  {}'.format(', '.join(crop_type_states)))
+    logging.info(f'\nStates with field feature collections:\n  {", ".join(crop_type_states)}')
 
 
     # Get the last available CDL year
-    # TODO: Should probably wrap in a try/except
     cdl_year_max = int(utils.get_info(
         ee.ImageCollection(cdl_coll_id)
         .limit(1, 'system:time_start', False).first()
@@ -191,9 +191,7 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
     logging.info('\nImage Exports')
     for export_n, export_info in enumerate(export_list):
         mgrs_tile = export_info['index'].upper()
-        logging.info('MGRS Tile: {} ({}/{})'.format(
-            mgrs_tile, export_n + 1, len(export_list)
-        ))
+        logging.info(f'MGRS Tile: {mgrs_tile} ({export_n + 1}/{len(export_list)})')
         logging.debug(f'  Shape:      {export_info["shape_str"]}')
         logging.debug(f'  Transform:  {export_info["geo_str"]}')
         logging.debug(f'  Extent:     {export_info["extent"]}')
@@ -210,8 +208,8 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
 
         # Get a list of states that could intersect the MGRS tile
         # Use this state list to select the field collections
-        state_coll = ee.FeatureCollection(study_area_coll_id).filterBounds(mgrs_geom)
-        mgrs_states = state_coll.aggregate_array(study_area_property).getInfo()
+        state_coll = ee.FeatureCollection(states_coll_id).filterBounds(mgrs_geom)
+        mgrs_states = state_coll.aggregate_array(states_name_property).getInfo()
         logging.debug(f'  States intersecting the MGRS tile/zone: '
                       f'{", ".join(sorted(mgrs_states))}')
 
@@ -223,8 +221,7 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
             if state not in crop_type_states:
                 continue
             crop_type_coll_id = f'{crop_type_folder_id}/{state.upper()}'
-            crop_type_coll = ee.FeatureCollection(crop_type_coll_id)\
-                .filterBounds(mgrs_geom)
+            crop_type_coll = ee.FeatureCollection(crop_type_coll_id).filterBounds(mgrs_geom)
             field_coll = field_coll.merge(crop_type_coll)
 
         # CGM - There may be tiles without fields, especially for the eastern
@@ -241,8 +238,7 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
         for year in years:
             image_id = f'{mgrs_tile}_{year}0101'
             asset_id = f'{export_coll_id}/{image_id}'
-            asset_short_id = asset_id.replace(
-                'projects/earthengine-legacy/assets/', '')
+            asset_short_id = asset_id.replace('projects/earthengine-legacy/assets/', '')
             export_id = f'crop_type_{image_id}'
             crop_type_field = f'CROP_{year}'
             logging.info(f'{asset_id}')
@@ -283,18 +279,29 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
 
             # Rasterize the fields
             # Added the uint8 since image was coming back as a double
-            field_img = field_coll\
-                .filterMetadata(crop_type_field, 'greater_than', 0)\
-                .reduceToImage([crop_type_field], ee.Reducer.first())\
+            field_img = (
+                field_coll
+                .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
+                .reduceToImage([crop_type_field], ee.Reducer.first())
                 .uint8()
+            )
             output_img = output_img.addBands(field_img.rename(['fields']))
             properties['field_states'] = ','.join(field_states)
 
+            # # TODO: Change .filterMetadata() line above to the following
+            # # Long term it might be better to reassign any 176 fields to a
+            # #   different code in the field database,
+            # #   but this will avoid burning in the 176 value
+            # .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
 
+
+            # TODO: Check to see if there are any newer LandIQ years that can be ingested
             # If a California tile, mosaic in the LandIQ image for the UTM zone
             if mgrs_tile in ['10S', '10T', '11S']:
-                if year in [2014, 2016, 2018]:
+                if year in [2014, 2016, 2018, 2019, 2020, 2021]:
                     landiq_img_id = f'{landiq_coll_id}/{year}'
+                    # Should we use the zone specific images instead?
+                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
                     landiq_img = ee.Image(landiq_img_id)
                 elif year < 2009:
                     # Don't include LandIQ before 2009
@@ -303,20 +310,20 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
                     # Use a 2014 remapped annual crop image for pre-2014 years
                     # Remove the urban and managed wetland polygons
                     landiq_img_id = f'{landiq_coll_id}/2014'
-                    landiq_img = ee.Image(landiq_img_id)\
-                        .remap(remap_in, remap_out)\
+                    landiq_img = (
+                        ee.Image(landiq_img_id)
+                        .remap(remap_in, remap_out)
                         .updateMask(ee.Image(landiq_img_id).neq(82)
                                     .And(ee.Image(landiq_img_id).neq(87)))
+                    )
                 elif year == 2015:
-                    # Should we use the zone specific images?
                     landiq_img_id = f'{landiq_coll_id}/2014'
-                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
                 elif year == 2017:
                     landiq_img_id = f'{landiq_coll_id}/2016'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year > 2018:
-                    landiq_img_id = f'{landiq_coll_id}/2018'
+                elif year > 2021:
+                    landiq_img_id = f'{landiq_coll_id}/2021'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
                 else:
                     logging.warning(f'unexpected year: {year}')
@@ -328,9 +335,11 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
 
 
             # For California, always use the annual remapped CDL
+            # This is different than the generic CDL section below where the
+            #   annual remap is only used for pre-2008 and current years
             # Use a 2008 remapped annual crop image for all pre-2008 years
             # For all years after the last available CDL year,
-            #   use a annual crop remapped version of the last CDL year
+            #   use an annual crop remapped version of the last CDL year
             # Never use the CA 2007 image
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year < 2008:
@@ -340,37 +349,18 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
                 else:
                     cdl_img_id = f'{cdl_coll_id}/{year}'
                 # The clip could be changed to a mask using the CIMIS mask?
-                ca_ftr = ee.FeatureCollection('TIGER/2018/States')\
-                    .filterMetadata('STUSPS', 'equals', 'CA').first()
-                cdl_ca_img = ee.Image(cdl_img_id).select(['cropland'])\
-                    .remap(remap_in, remap_out)\
+                ca_ftr = (
+                    ee.FeatureCollection('TIGER/2018/States')
+                    .filterMetadata('STUSPS', 'equals', 'CA')
+                    .first()
+                )
+                cdl_ca_img = (
+                    ee.Image(cdl_img_id).select(['cropland'])
+                    .remap(remap_in, remap_out)
                     .clip(ca_ftr.geometry())
+                )
                 output_img = output_img.addBands(cdl_ca_img.rename(['cdl_ca_img']))
                 properties['cdl_ca_img_id'] = cdl_ca_img
-
-
-            # Attempt to use the year specific CDL images for pre2008 years
-            if year < 2008:
-                if year == 2005 and mgrs_tiles not in ['11T', '12T']:
-                    # Don't use the 2005a image for Idaho tiles
-                    # First add the Mississippi 2005b image
-                    output_img.addBands(ee.Image(f'{cdl_coll_id}/2005b')
-                        .select(['cropland'], ['cdl_ms_img'])
-                    )
-                    # Then bring in the other 2005 image
-                    cdl_img_id = f'{cdl_coll_id}/2005a'
-                elif year == 2007:
-                    # Never use the California 2007b image
-                    cdl_img_id = f'{cdl_coll_id}/2007a'
-                else:
-                    cdl_img_id = f'{cdl_coll_id}/{year}'
-                cdl_state_img = ee.Image(cdl_img_id)\
-                    .select(['cropland'], ['cdl_state_img'])
-                output_img = output_img.addBands(cdl_state_img)
-                # CGM - Not sure what to set the property to here
-                # An MGRS tile could be a combination of a pre2008 state image
-                #   and a 2008 image
-                properties['cdl_state_img_id'] = cdl_img_id
 
 
             # For any years after the last available CDL year
@@ -378,13 +368,11 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
             # For pre-2008 years, use the annual crop remapped 2008 images
             if year > cdl_year_max:
                 cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland'])\
-                    .remap(remap_in, remap_out)
+                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
                 # crop_source = f'{cdl_img_id} - remapped annual crops'
             elif year < 2008:
                 cdl_img_id = f'{cdl_coll_id}/2008'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland'])\
-                    .remap(remap_in, remap_out)
+                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
                 # crop_source = f'{cdl_img_id} - remapped annual crops'
             else:
                 cdl_img_id = f'{cdl_coll_id}/{year}'
@@ -393,20 +381,50 @@ def main(years=[], mgrs_tiles=[], overwrite_flag=False, delay=0, gee_key_file=No
             output_img = output_img.addBands(cdl_img.rename(['cdl_conus_img']))
             properties['cdl_img_id'] = cdl_img_id
 
-            # pprint.pprint(output_img.getInfo())
-            # input('ENTER')
+
+            # Add a CDL remapped version of the NALCMS 2020 image last
+            # Using 47 for the ag class for now
+            # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
+            # TODO: Doublecheck remap values
+            nalcms_cdl_remap = [
+                [1, 142],   # Temperate or sub-polar needleleaf forest
+                [2, 142],   # Sub-polar taiga needleleaf forest
+                [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
+                [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
+                [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
+                [6, 143],   # Mixed forest
+                [7, 152],   # Tropical or sub-tropical shrubland
+                [8, 152],   # Temperate or sub-polar shrubland
+                [9, 176],   # Tropical or sub-tropical grassland
+                [10, 176],  # Temperate or sub-polar grassland
+                [11, 0],    # Sub-polar or polar shrubland-lichen-moss
+                [12, 0],    # Sub-polar or polar grassland-lichen-moss
+                [13, 0],    # Sub-polar or polar barren-lichen-moss
+                [14, 195],  # Wetland
+                [15, 47],   # Cropland
+                [16, 131],  # Barren lands
+                [17, 123],  # Urban and built-up
+                [18, 111],  # Water
+                [19, 112],  # Snow and ice
+            ]
+            nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
+            nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+            nalcms_img = (
+                ee.Image(nalcms_img_id)
+                .remap(nalcms_cdl_remap[0], nalcms_cdl_remap[1])
+                .rename(['nalcms_img'])
+            )
+            output_img = output_img.addBands(nalcms_img)
+            properties['nalcms_img'] = nalcms_img_id
 
 
-            # TODO: Figure out if firstNonNull will return first or last band first?
-            output_img = output_img\
-                .reduce(ee.Reducer.firstNonNull()) \
-                .updateMask(mgrs_mask_img)\
-                .rename(['cropland'])\
+            output_img = (
+                output_img
+                .reduce(ee.Reducer.firstNonNull())
+                .updateMask(mgrs_mask_img)
+                .rename(['cropland'])
                 .set(properties)
-            # output_img = ee.ImageCollection([crop_type_img, field_img])\
-            #     .mosaic()\
-            #     .updateMask(mgrs_mask_img)\
-            #     .set(properties)
+            )
 
             # Build export tasks
             task = ee.batch.Export.image.toAsset(
@@ -466,7 +484,7 @@ def mgrs_export_tiles(
     utm_property : str, optional
         UTM zone property in the MGRS feature collection (the default is 'wrs2').
     cell_size : float, optional
-        (the default is 30).
+        Cell size for transform and shape calculation (the default is 30).
 
     Returns
     ------
@@ -477,9 +495,11 @@ def mgrs_export_tiles(
     logging.debug('Building study area collection')
     logging.debug(f'  {study_area_coll_id}')
     study_area_coll = ee.FeatureCollection(study_area_coll_id)
-    if (study_area_property == 'STUSPS' and
-            'CONUS' in [x.upper() for x in study_area_features]):
-        # Exclude AK, HI, AS, GU, PR, MP, VI, (but keep DC)
+    if ((study_area_property == 'STUSPS') and
+            ('CONUS' in [x.upper() for x in study_area_features])):
+        # Exclude AK, HI, AS, GU, PR, MP, VI
+        # We don't really need all the states since the MGRS tiles are large
+        #   but leaving as is for now
         study_area_features = [
             'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
             'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME',
@@ -501,9 +521,8 @@ def mgrs_export_tiles(
             ee.Filter.inList(study_area_property, study_area_features)
         )
 
-    logging.info('Building MGRS tile list')
-    tiles_coll = ee.FeatureCollection(mgrs_coll_id) \
-        .filterBounds(study_area_coll.geometry())
+    logging.info('\nBuilding MGRS tile list')
+    tiles_coll = ee.FeatureCollection(mgrs_coll_id).filterBounds(study_area_coll.geometry())
 
     # Filter collection by user defined lists
     if utm_zones:
@@ -561,7 +580,7 @@ def mgrs_export_tiles(
 def arg_parse():
     """"""
     parser = argparse.ArgumentParser(
-        description='Build crop type MGRS tiles from a feature collection',
+        description='Build crop type MGRS tiles from state feature collections',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--tiles', default='', nargs='+',
