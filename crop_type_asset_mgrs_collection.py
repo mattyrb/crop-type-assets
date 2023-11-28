@@ -58,21 +58,29 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     landiq_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
 
-    # For now, hardcode the study area as the CONUS
-    # Allow the user to set a subset of states also
-    # study_area_coll = projects/climate-engine/featureCollections/shp_new/cb_2017_us_state_5m
-    study_area_coll_id = 'TIGER/2018/States'
-    study_area_property = 'STUSPS'
-    study_area_features = 'CONUS'
-    # study_area_features = 'AZ, CA, CO, ID, MT, NM, NV, OR, UT, WA, WY'
-    # study_area_features = 'NV'
+    # The states collection is being used to select the field collections (by name)
+    states_coll_id = 'TIGER/2018/States'
+    states_name_property = 'STUSPS'
+
+    supported_mgrs_tiles = [
+        '10S', '10T', '10U', '11R', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
+        '13R', '13S', '13T', '13U', '14R', '14S', '14T', '14U', '15R', '15S', '15T', '15U',
+        '16R', '16S', '16T', '16U', '17R', '17S', '17T', '17U', '18S', '18T', '18U',
+        '19T', '19U'
+    ]
+    # supported_mgrs_tiles = [
+    #     '10S', '10T', '10U', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
+    #     '13R', '13S', '13T', '13U', '14R', '14S', '14T', '14U', '15R', '15S', '15T', '15U',
+    #     '16R', '16S', '16T', '16U', '17R', '17S', '17T', '17U', '18S', '18T', '19T',
+    # ]
+    mgrs_skip_list = []
 
     annual_remap_path = os.path.join(os.getcwd(), 'cdl_annual_crop_remap_table.csv')
 
-    # year_min = 1997
     year_min = 2000
     year_max = 2023
 
+    # Parse user inputs
     if not years:
         years = list(range(year_min, year_max+1))
     else:
@@ -82,7 +90,20 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             if ((year <= year_max) and (year >= year_min))
         )
         years = sorted(list(years))
-    logging.info(f'Years:  {", ".join(map(str, years))}')
+    logging.info(f'Years:    {", ".join(map(str, years))}')
+
+    if mgrs_tiles:
+        mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
+        # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
+        logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
+
+    # Limit the MGRS tile list to the default tile list (if set)
+    # Otherwise just use the supported tile list
+    if mgrs_tiles and supported_mgrs_tiles:
+        mgrs_tiles = [mgrs for mgrs in mgrs_tiles if mgrs in supported_mgrs_tiles]
+    else:
+        mgrs_tiles = supported_mgrs_tiles[:]
+
 
     # Load the CDL annual crop remap
     # TODO: Get the script path instead (in case it is different than the cwd)
@@ -92,18 +113,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     for cdl_code in set(range(1, 256)) - set(cdl_annual_remap.keys()):
         cdl_annual_remap[cdl_code] = cdl_code
     remap_in, remap_out = map(list, zip(*cdl_annual_remap.items()))
-
-    # mgrs_skip_list = []
-    # utm_zones = []
-
-    # Parse user inputs
-    if mgrs_tiles:
-        mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
-        # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
-        logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
-    study_area_features = sorted([x.strip() for x in study_area_features.split(',')])
-    logging.info(f'Features: {", ".join(study_area_features)}')
-    # input('ENTER')
 
 
     logging.info('\nInitializing Earth Engine')
@@ -144,12 +153,12 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
     # Get list of MGRS tiles that intersect the study area
+    # Intentionally using the MGRS collection as the study area collection
+    #   since the MGRS tile list has been filtered to the supported tiles
     logging.debug('\nBuilding export list')
     export_list = mgrs_export_tiles(
-        study_area_coll_id=study_area_coll_id,
+        study_area_coll_id=mgrs_ftr_coll_id,
         mgrs_coll_id=mgrs_ftr_coll_id,
-        study_area_property=study_area_property,
-        study_area_features=study_area_features,
         mgrs_tiles=mgrs_tiles,
         # mgrs_skip_list=mgrs_skip_list,
         # utm_zones=utm_zones,
@@ -170,7 +179,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
     # Get the last available CDL year
-    # TODO: Should probably wrap in a try/except
     cdl_year_max = int(utils.get_info(
         ee.ImageCollection(cdl_coll_id)
         .limit(1, 'system:time_start', False).first()
@@ -200,8 +208,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
         # Get a list of states that could intersect the MGRS tile
         # Use this state list to select the field collections
-        state_coll = ee.FeatureCollection(study_area_coll_id).filterBounds(mgrs_geom)
-        mgrs_states = state_coll.aggregate_array(study_area_property).getInfo()
+        state_coll = ee.FeatureCollection(states_coll_id).filterBounds(mgrs_geom)
+        mgrs_states = state_coll.aggregate_array(states_name_property).getInfo()
         logging.debug(f'  States intersecting the MGRS tile/zone: '
                       f'{", ".join(sorted(mgrs_states))}')
 
@@ -292,6 +300,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year in [2014, 2016, 2018, 2019, 2020, 2021]:
                     landiq_img_id = f'{landiq_coll_id}/{year}'
+                    # Should we use the zone specific images instead?
+                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
                     landiq_img = ee.Image(landiq_img_id)
                 elif year < 2009:
                     # Don't include LandIQ before 2009
@@ -307,9 +317,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                                     .And(ee.Image(landiq_img_id).neq(87)))
                     )
                 elif year == 2015:
-                    # Should we use the zone specific images?
                     landiq_img_id = f'{landiq_coll_id}/2014'
-                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
                 elif year == 2017:
                     landiq_img_id = f'{landiq_coll_id}/2016'
@@ -328,7 +336,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
             # For California, always use the annual remapped CDL
             # This is different than the generic CDL section below where the
-            #   annual remap is only used for pre 2008 and current years
+            #   annual remap is only used for pre-2008 and current years
             # Use a 2008 remapped annual crop image for all pre-2008 years
             # For all years after the last available CDL year,
             #   use an annual crop remapped version of the last CDL year
@@ -399,7 +407,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 [18, 111],  # Water
                 [19, 112],  # Snow and ice
             ]
-            nalcms_cdl_remap = [[x[0], x[1]] for x in nalcms_cdl_remap]
+            nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
             nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
             nalcms_img = (
                 ee.Image(nalcms_img_id)
@@ -513,7 +521,7 @@ def mgrs_export_tiles(
             ee.Filter.inList(study_area_property, study_area_features)
         )
 
-    logging.info('Building MGRS tile list')
+    logging.info('\nBuilding MGRS tile list')
     tiles_coll = ee.FeatureCollection(mgrs_coll_id).filterBounds(study_area_coll.geometry())
 
     # Filter collection by user defined lists
