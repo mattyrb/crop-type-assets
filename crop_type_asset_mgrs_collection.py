@@ -290,7 +290,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # TODO: Check to see if there are any newer LandIQ years that can be ingested
             # If a California tile, mosaic in the LandIQ image for the UTM zone
             if mgrs_tile in ['10S', '10T', '11S']:
-                if year in [2014, 2016, 2018]:
+                if year in [2014, 2016, 2018, 2019, 2020, 2021]:
                     landiq_img_id = f'{landiq_coll_id}/{year}'
                     landiq_img = ee.Image(landiq_img_id)
                 elif year < 2009:
@@ -314,8 +314,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 elif year == 2017:
                     landiq_img_id = f'{landiq_coll_id}/2016'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year > 2018:
-                    landiq_img_id = f'{landiq_coll_id}/2018'
+                elif year > 2021:
+                    landiq_img_id = f'{landiq_coll_id}/2021'
                     landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
                 else:
                     logging.warning(f'unexpected year: {year}')
