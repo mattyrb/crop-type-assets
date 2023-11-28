@@ -17,7 +17,7 @@ import openet.core.utils as utils
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
-TOOL_VERSION = '0.2.0'
+TOOL_VERSION = '0.3.0'
 
 
 def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_file=None):
@@ -42,7 +42,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     logging.info('\nBuild crop type MGRS tiles from the crop feature collections')
 
     # Hardcoded parameters
-    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022b'
+    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022c'
     # export_band_name = 'crop_type'
 
     crop_type_folder_id = ('projects/earthengine-legacy/assets/'
@@ -56,11 +56,40 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     cdl_coll_id = 'USDA/NASS/CDL'
 
-    landiq_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+    # California specific crop type images built from LandIQ crop mapping data
+    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
 
     # The states collection is being used to select the field collections (by name)
     states_coll_id = 'TIGER/2018/States'
     states_name_property = 'STUSPS'
+
+    # Setting the in between years explicitly
+    # Selecting the previous NLCD year when difference is equal
+    # Will use first/last available year for years outside provided range
+    # TODO: Double check this decision
+    nlcd_img_ids = {
+        2021: 'USGS/NLCD_RELEASES/2021_REL/NLCD/2021',
+        2020: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
+        2019: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
+        2018: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
+        2017: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
+        2016: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
+        2015: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
+        2014: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2013',
+        2013: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2013',
+        2012: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
+        2011: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
+        2010: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
+        2009: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2008',
+        2008: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2008',
+        2007: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2006',
+        2006: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2006',
+        2005: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
+        2004: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
+        2003: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
+        2002: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2001',
+        2001: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2001',
+    }
 
     supported_mgrs_tiles = [
         '10S', '10T', '10U', '11R', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
@@ -90,12 +119,12 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             if ((year <= year_max) and (year >= year_min))
         )
         years = sorted(list(years))
-    logging.info(f'Years:    {", ".join(map(str, years))}')
+    logging.info(f'Years: {", ".join(map(str, years))}')
 
     if mgrs_tiles:
         mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
         # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
-        logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
+        logging.info(f'Tiles: {", ".join(mgrs_tiles)}')
 
     # Limit the MGRS tile list to the default tile list (if set)
     # Otherwise just use the supported tile list
@@ -112,7 +141,36 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     # Set all unassigned values to remap to themselves
     for cdl_code in set(range(1, 256)) - set(cdl_annual_remap.keys()):
         cdl_annual_remap[cdl_code] = cdl_code
-    remap_in, remap_out = map(list, zip(*cdl_annual_remap.items()))
+    cdl_remap_in, cdl_remap_out = map(list, zip(*cdl_annual_remap.items()))
+
+
+    # Add a CDL remapped version of the NALCMS 2020 image last
+    # Using 47 for the ag class for now
+    # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
+    # TODO: Doublecheck remap values
+    nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+    nalcms_cdl_remap = [
+        [1, 142],   # Temperate or sub-polar needleleaf forest
+        [2, 142],   # Sub-polar taiga needleleaf forest
+        [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
+        [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
+        [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
+        [6, 143],   # Mixed forest
+        [7, 152],   # Tropical or sub-tropical shrubland
+        [8, 152],   # Temperate or sub-polar shrubland
+        [9, 176],   # Tropical or sub-tropical grassland
+        [10, 176],  # Temperate or sub-polar grassland
+        [11, 0],    # Sub-polar or polar shrubland-lichen-moss
+        [12, 0],    # Sub-polar or polar grassland-lichen-moss
+        [13, 0],    # Sub-polar or polar barren-lichen-moss
+        [14, 195],  # Wetland
+        [15, 47],   # Cropland
+        [16, 131],  # Barren lands
+        [17, 123],  # Urban and built-up
+        [18, 111],  # Water
+        [19, 112],  # Snow and ice
+    ]
+    nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
 
 
     logging.info('\nInitializing Earth Engine')
@@ -179,6 +237,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
     # Get the last available CDL year
+    cdl_year_min = 2008
     cdl_year_max = int(utils.get_info(
         ee.ImageCollection(cdl_coll_id)
         .limit(1, 'system:time_start', False).first()
@@ -278,60 +337,66 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             output_img = mgrs_mask_img.updateMask(0)
 
             # Rasterize the fields
+            # 176 fields will not be burned in (for now)
+            # Long term they should probably be reassigned in the field collections
             # Added the uint8 since image was coming back as a double
+            # The weird filtering on the 176 value is to try and handle floating
+            #   point values in the crop type values in the feature collections
+            field_filter = (
+                ee.Filter.gt(crop_type_field, 0)
+                .And(ee.Filter.lt(crop_type_field, 175.5).Or(ee.Filter.gt(crop_type_field, 176.5)))
+            )
             field_img = (
                 field_coll
-                .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
+                .filter(field_filter)
                 .reduceToImage([crop_type_field], ee.Reducer.first())
-                .uint8()
+                .round().uint8()
             )
             output_img = output_img.addBands(field_img.rename(['fields']))
             properties['field_states'] = ','.join(field_states)
 
-            # # TODO: Change .filterMetadata() line above to the following
-            # # Long term it might be better to reassign any 176 fields to a
-            # #   different code in the field database,
-            # #   but this will avoid burning in the 176 value
-            # .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
 
-
-            # TODO: Check to see if there are any newer LandIQ years that can be ingested
-            # If a California tile, mosaic in the LandIQ image for the UTM zone
+            # Mosaic the California LandIQ image for the UTM zone before any CDL images
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year in [2014, 2016, 2018, 2019, 2020, 2021]:
-                    landiq_img_id = f'{landiq_coll_id}/{year}'
+                    ca_img_id = f'{ca_coll_id}/{year}'
                     # Should we use the zone specific images instead?
-                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
-                    landiq_img = ee.Image(landiq_img_id)
-                elif year < 2009:
-                    # Don't include LandIQ before 2009
-                    landiq_img = None
+                    # ca_img_id = f'{ca_coll_id}/2014_zone{mgrs_tiles[:2]}'
+                    ca_img = ee.Image(ca_img_id)
+                elif year > 2021:
+                    ca_img_id = f'{ca_coll_id}/2021'
+                    ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
+                elif year in [2015, 2017]:
+                    ca_img_id = f'{ca_coll_id}/{year - 1}'
+                    ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2009, 2010, 2011, 2012, 2013]:
                     # Use a 2014 remapped annual crop image for pre-2014 years
                     # Remove the urban and managed wetland polygons
-                    landiq_img_id = f'{landiq_coll_id}/2014'
-                    landiq_img = (
-                        ee.Image(landiq_img_id)
-                        .remap(remap_in, remap_out)
-                        .updateMask(ee.Image(landiq_img_id).neq(82)
-                                    .And(ee.Image(landiq_img_id).neq(87)))
+                    ca_img_id = f'{ca_coll_id}/2014'
+                    ca_img = (
+                        ee.Image(ca_img_id)
+                        .remap(cdl_remap_in, cdl_remap_out)
+                        .updateMask(ee.Image(ca_img_id).neq(82)
+                                    .And(ee.Image(ca_img_id).neq(87)))
                     )
-                elif year == 2015:
-                    landiq_img_id = f'{landiq_coll_id}/2014'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year == 2017:
-                    landiq_img_id = f'{landiq_coll_id}/2016'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year > 2021:
-                    landiq_img_id = f'{landiq_coll_id}/2021'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
+                elif year < 2009:
+                    # Don't include before 2009
+                    ca_img = None
                 else:
                     logging.warning(f'unexpected year: {year}')
                     input('ENTER')
 
-                if landiq_img:
-                    output_img = output_img.addBands(landiq_img.rename(['landiq']))
-                    properties['landiq_img_id'] = landiq_img_id
+                if ca_img:
+                    output_img = output_img.addBands(ca_img.rename(['landiq']))
+                    properties['custom_ca_img_id'] = ca_img_id
+
+
+            # Select the NLCD year
+            # Use the first/last available year if outside the available range
+            nlcd_year = min(year, max(nlcd_img_ids.keys()))
+            nlcd_year = max(nlcd_year, min(nlcd_img_ids.keys()))
+            nlcd_img_id = nlcd_img_ids[nlcd_year]
+            nlcd_img = ee.Image(nlcd_img_id).select('landcover')
 
 
             # For California, always use the annual remapped CDL
@@ -340,27 +405,31 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Use a 2008 remapped annual crop image for all pre-2008 years
             # For all years after the last available CDL year,
             #   use an annual crop remapped version of the last CDL year
-            # Never use the CA 2007 image
             if mgrs_tile in ['10S', '10T', '11S']:
-                if year < 2008:
-                    cdl_img_id = f'{cdl_coll_id}/2008'
+                if year < cdl_year_min:
+                    ca_img_id = f'{cdl_coll_id}/{cdl_year_min}'
                 elif year > cdl_year_max:
-                    cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
+                    ca_img_id = f'{cdl_coll_id}/{cdl_year_max}'
                 else:
-                    cdl_img_id = f'{cdl_coll_id}/{year}'
+                    ca_cdl_img_id = f'{cdl_coll_id}/{year}'
+
+                ca_cdl_img = (
+                    ee.Image(ca_cdl_img_id).select(['cropland'])
+                    .remap(cdl_remap_in, cdl_remap_out)
+                )
+                # Change any CDL 176 and NLCD 81/82 pixels to 37
+                ca_cdl_img = ca_cdl_img.where(
+                    ca_cdl_img.eq(176).And(nlcd_img.eq(81).Or(nlcd_img.eq(82))),
+                    37
+                )
                 # The clip could be changed to a mask using the CIMIS mask?
-                ca_ftr = (
+                ca_geom = (
                     ee.FeatureCollection('TIGER/2018/States')
-                    .filterMetadata('STUSPS', 'equals', 'CA')
-                    .first()
+                    .filterMetadata('STUSPS', 'equals', 'CA').first().geometry()
                 )
-                cdl_ca_img = (
-                    ee.Image(cdl_img_id).select(['cropland'])
-                    .remap(remap_in, remap_out)
-                    .clip(ca_ftr.geometry())
-                )
-                output_img = output_img.addBands(cdl_ca_img.rename(['cdl_ca_img']))
-                properties['cdl_ca_img_id'] = cdl_ca_img
+                ca_cdl_img = ca_cdl_img.clip(ca_geom)
+                output_img = output_img.addBands(ca_cdl_img.rename(['cdl_ca_img']))
+                properties['cdl_ca_img_id'] = ca_cdl_img_id
 
 
             # For any years after the last available CDL year
@@ -368,56 +437,39 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # For pre-2008 years, use the annual crop remapped 2008 images
             if year > cdl_year_max:
                 cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
-                # crop_source = f'{cdl_img_id} - remapped annual crops'
-            elif year < 2008:
-                cdl_img_id = f'{cdl_coll_id}/2008'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
-                # crop_source = f'{cdl_img_id} - remapped annual crops'
+                cdl_img = (
+                    ee.Image(cdl_img_id).select(['cropland'])
+                    .remap(cdl_remap_in, cdl_remap_out)
+                )
+            elif year < cdl_year_min:
+                cdl_img_id = f'{cdl_coll_id}/{cdl_year_min}'
+                cdl_img = (
+                    ee.Image(cdl_img_id).select(['cropland'])
+                    .remap(cdl_remap_in, cdl_remap_out)
+                )
             else:
                 cdl_img_id = f'{cdl_coll_id}/{year}'
                 cdl_img = ee.Image(cdl_img_id).select(['cropland'])
-                # crop_source = f'{cdl_img_id}'
+            # Change any CDL 176 and NLCD 81/82 pixels to 37
+            cdl_img = cdl_img.where(
+                cdl_img.eq(176).And(nlcd_img.eq(81).Or(nlcd_img.eq(82))),
+                37
+            )
             output_img = output_img.addBands(cdl_img.rename(['cdl_conus_img']))
             properties['cdl_img_id'] = cdl_img_id
 
 
-            # Add a CDL remapped version of the NALCMS 2020 image last
-            # Using 47 for the ag class for now
-            # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
-            # TODO: Doublecheck remap values
-            nalcms_cdl_remap = [
-                [1, 142],   # Temperate or sub-polar needleleaf forest
-                [2, 142],   # Sub-polar taiga needleleaf forest
-                [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
-                [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
-                [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
-                [6, 143],   # Mixed forest
-                [7, 152],   # Tropical or sub-tropical shrubland
-                [8, 152],   # Temperate or sub-polar shrubland
-                [9, 176],   # Tropical or sub-tropical grassland
-                [10, 176],  # Temperate or sub-polar grassland
-                [11, 0],    # Sub-polar or polar shrubland-lichen-moss
-                [12, 0],    # Sub-polar or polar grassland-lichen-moss
-                [13, 0],    # Sub-polar or polar barren-lichen-moss
-                [14, 195],  # Wetland
-                [15, 47],   # Cropland
-                [16, 131],  # Barren lands
-                [17, 123],  # Urban and built-up
-                [18, 111],  # Water
-                [19, 112],  # Snow and ice
-            ]
-            nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
-            nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+            # Use the remapped NALCMS (North America) image as the fallback image
             nalcms_img = (
                 ee.Image(nalcms_img_id)
                 .remap(nalcms_cdl_remap[0], nalcms_cdl_remap[1])
                 .rename(['nalcms_img'])
             )
             output_img = output_img.addBands(nalcms_img)
-            properties['nalcms_img'] = nalcms_img_id
+            properties['nalcms_img_id'] = nalcms_img_id
 
 
+            # Build the output image from the stack
             output_img = (
                 output_img
                 .reduce(ee.Reducer.firstNonNull())
