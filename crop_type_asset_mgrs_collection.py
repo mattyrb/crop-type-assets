@@ -278,21 +278,23 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             output_img = mgrs_mask_img.updateMask(0)
 
             # Rasterize the fields
+            # 176 fields will not be burned in (for now)
+            # Long term they should probably be reassigned in the field collections
             # Added the uint8 since image was coming back as a double
+            # The weird filtering on the 176 value is to try and handle floating
+            #   point values in the crop type values in the feature collections
+            field_filter = (
+                ee.Filter.gt(crop_type_field, 0)
+                .And(ee.Filter.lt(crop_type_field, 175.5).Or(ee.Filter.gt(crop_type_field, 176.5)))
+            )
             field_img = (
                 field_coll
-                .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
+                .filter(field_filter)
                 .reduceToImage([crop_type_field], ee.Reducer.first())
-                .uint8()
+                .round().uint8()
             )
             output_img = output_img.addBands(field_img.rename(['fields']))
             properties['field_states'] = ','.join(field_states)
-
-            # # TODO: Change .filterMetadata() line above to the following
-            # # Long term it might be better to reassign any 176 fields to a
-            # #   different code in the field database,
-            # #   but this will avoid burning in the 176 value
-            # .filter(ee.Filter.gt(crop_type_field, 0).And(ee.Filter.neq(crop_type_field, 176)))
 
 
             # TODO: Check to see if there are any newer LandIQ years that can be ingested
