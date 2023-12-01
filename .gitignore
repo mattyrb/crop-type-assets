@@ -26,5 +26,5 @@ dist/
 *.DS_Store
 
 # Project files
-california/source
+california/sources
 *.zip
