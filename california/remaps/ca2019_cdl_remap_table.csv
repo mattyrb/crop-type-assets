@@ -1,0 +1,71 @@
+IN,OUT,Note
+F16,1,
+F1,2,
+R1,3,Using Rice code
+R2,3,Using Rice code
+F12,6,
+G2,23,
+G,25,
+G6,25,
+F2,33,
+P1,36,
+F5,41,
+F10,42,
+T12,43,
+T13,43,
+T31,46,
+C7,47,
+F,47,
+F11,47,
+I2,61,
+T,47,
+T16,47,
+T17,47,
+T18,47,
+YP,47,"LAndIQ ""catch-all"" for polygons without a subclass"
+T9,48,
+T10,49,
+T15,54,
+P7,59,Turf Farms (mapped to CDL Sod/Grass Seed)
+UL2,59,Golf course – irrigated (mapped to CDL Sod/Grass Seed)
+I1,61,
+I4,61,Idle long term land consistently idle for four or more years (CGM should this be fallow?)
+X,61,Not cropped or unclassified
+D3,66,
+D5,67,
+D1,68,
+V,69,
+V2,69,
+C4,71,Dates (mapped to CDL Other Tree Crops)
+C8,71,Kiwis (mapped to CDL Other Tree Crops)
+C10,71,Eucalyptus (mapped to CDL Other Tree Crops)
+D,71,Deciduous fruits and nuts (mapped to CDL Other Tree Crops)
+C2,72,Lemons (mapped to CDL Citrus)
+C3,72,Oranges (mapped to CDL Citrus)
+C,72,Citrus and subtropical (mapped to CDL Citrus)
+D12,75,Almonds
+D13,76,Walnuts
+D6,77,Pears
+U,82,Developed
+T27,122,Greenhouse (mapped to CDL Developed/Low Intensity)
+D10,141,Miscellaneous deciduous (CGM should this be mapped to an ag class like 71 Other Tree Crops?)
+D11,141,Mixed deciduous (CGM should this be mapped to an ag class like 71 Other Tree Crops?)
+P,176,Pasture (CGM should this be mapped to 37 instead?)
+P3,176,Mixed pasture (CGM should this be mapped to 37 instead?)
+P4,176,Native pasture (CGM should this be mapped to 37 instead?)
+P5,176,Induced high water table native pasture (CGM should this be mapped to 37 instead?)
+P6,176,Miscellaneous grasses (CGM should this be mapped to 37 instead?)
+D14,204,Pistachios
+T6,206,Carrots
+D8,210,Prunes
+C6,211,Olives
+T4,214,Broccoli
+C5,215,Avocados
+T21,216,Peppers
+D15,217,Pomegranates
+D7,220,Plums
+D16,220,Plums Prunes or Apricots grouped for remote sensing only
+T20,221,Strawberries
+D2,223,Apricots
+T30,227,Lettuce
+T19,242,Blueberries
