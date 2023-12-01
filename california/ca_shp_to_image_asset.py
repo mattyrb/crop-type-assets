@@ -31,7 +31,7 @@ def main(years, overwrite_flag=False):
 
     """
     workspace = os.getcwd()
-    src_ws = os.path.join(workspace, 'source')
+    src_ws = os.path.join(workspace, 'sources')
     shp_ws = os.path.join(workspace, 'shapefiles')
     tif_ws = os.path.join(workspace, 'images')
     map_ws = os.path.join(workspace, 'remaps')
