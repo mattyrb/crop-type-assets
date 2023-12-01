@@ -17,7 +17,7 @@ import openet.core.utils as utils
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
-TOOL_VERSION = '0.2.0'
+TOOL_VERSION = '0.3.0'
 
 
 def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_file=None):
@@ -56,7 +56,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     cdl_coll_id = 'USDA/NASS/CDL'
 
-    landiq_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+    # California specific crop type images built from LandIQ crop mapping data
+    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
 
     # The states collection is being used to select the field collections (by name)
     states_coll_id = 'TIGER/2018/States'
@@ -112,7 +113,36 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     # Set all unassigned values to remap to themselves
     for cdl_code in set(range(1, 256)) - set(cdl_annual_remap.keys()):
         cdl_annual_remap[cdl_code] = cdl_code
-    remap_in, remap_out = map(list, zip(*cdl_annual_remap.items()))
+    cdl_remap_in, cdl_remap_out = map(list, zip(*cdl_annual_remap.items()))
+
+
+    # Add a CDL remapped version of the NALCMS 2020 image last
+    # Using 47 for the ag class for now
+    # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
+    # TODO: Doublecheck remap values
+    nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+    nalcms_cdl_remap = [
+        [1, 142],   # Temperate or sub-polar needleleaf forest
+        [2, 142],   # Sub-polar taiga needleleaf forest
+        [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
+        [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
+        [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
+        [6, 143],   # Mixed forest
+        [7, 152],   # Tropical or sub-tropical shrubland
+        [8, 152],   # Temperate or sub-polar shrubland
+        [9, 176],   # Tropical or sub-tropical grassland
+        [10, 176],  # Temperate or sub-polar grassland
+        [11, 0],    # Sub-polar or polar shrubland-lichen-moss
+        [12, 0],    # Sub-polar or polar grassland-lichen-moss
+        [13, 0],    # Sub-polar or polar barren-lichen-moss
+        [14, 195],  # Wetland
+        [15, 47],   # Cropland
+        [16, 131],  # Barren lands
+        [17, 123],  # Urban and built-up
+        [18, 111],  # Water
+        [19, 112],  # Snow and ice
+    ]
+    nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
 
 
     logging.info('\nInitializing Earth Engine')
@@ -297,43 +327,39 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             properties['field_states'] = ','.join(field_states)
 
 
-            # TODO: Check to see if there are any newer LandIQ years that can be ingested
-            # If a California tile, mosaic in the LandIQ image for the UTM zone
+            # Mosaic the California LandIQ image for the UTM zone before any CDL images
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year in [2014, 2016, 2018, 2019, 2020, 2021]:
-                    landiq_img_id = f'{landiq_coll_id}/{year}'
+                    ca_img_id = f'{ca_coll_id}/{year}'
                     # Should we use the zone specific images instead?
-                    # landiq_img_id = f'{landiq_coll_id}/2014_zone{mgrs_tiles[:2]}'
-                    landiq_img = ee.Image(landiq_img_id)
-                elif year < 2009:
-                    # Don't include LandIQ before 2009
-                    landiq_img = None
+                    # ca_img_id = f'{ca_coll_id}/2014_zone{mgrs_tiles[:2]}'
+                    ca_img = ee.Image(ca_img_id)
+                elif year > 2021:
+                    ca_img_id = f'{ca_coll_id}/2021'
+                    ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
+                elif year in [2015, 2017]:
+                    ca_img_id = f'{ca_coll_id}/{year - 1}'
+                    ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2009, 2010, 2011, 2012, 2013]:
                     # Use a 2014 remapped annual crop image for pre-2014 years
                     # Remove the urban and managed wetland polygons
-                    landiq_img_id = f'{landiq_coll_id}/2014'
-                    landiq_img = (
-                        ee.Image(landiq_img_id)
-                        .remap(remap_in, remap_out)
-                        .updateMask(ee.Image(landiq_img_id).neq(82)
-                                    .And(ee.Image(landiq_img_id).neq(87)))
+                    ca_img_id = f'{ca_coll_id}/2014'
+                    ca_img = (
+                        ee.Image(ca_img_id)
+                        .remap(cdl_remap_in, cdl_remap_out)
+                        .updateMask(ee.Image(ca_img_id).neq(82)
+                                    .And(ee.Image(ca_img_id).neq(87)))
                     )
-                elif year == 2015:
-                    landiq_img_id = f'{landiq_coll_id}/2014'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year == 2017:
-                    landiq_img_id = f'{landiq_coll_id}/2016'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
-                elif year > 2021:
-                    landiq_img_id = f'{landiq_coll_id}/2021'
-                    landiq_img = ee.Image(landiq_img_id).remap(remap_in, remap_out)
+                elif year < 2009:
+                    # Don't include before 2009
+                    ca_img = None
                 else:
                     logging.warning(f'unexpected year: {year}')
                     input('ENTER')
 
-                if landiq_img:
-                    output_img = output_img.addBands(landiq_img.rename(['landiq']))
-                    properties['landiq_img_id'] = landiq_img_id
+                if ca_img:
+                    output_img = output_img.addBands(ca_img.rename(['landiq']))
+                    properties['custom_ca_img_id'] = ca_img_id
 
 
             # For California, always use the annual remapped CDL
@@ -358,7 +384,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 )
                 cdl_ca_img = (
                     ee.Image(cdl_img_id).select(['cropland'])
-                    .remap(remap_in, remap_out)
+                    .remap(cdl_remap_in, cdl_remap_out)
                     .clip(ca_ftr.geometry())
                 )
                 output_img = output_img.addBands(cdl_ca_img.rename(['cdl_ca_img']))
@@ -370,54 +396,31 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # For pre-2008 years, use the annual crop remapped 2008 images
             if year > cdl_year_max:
                 cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
-                # crop_source = f'{cdl_img_id} - remapped annual crops'
+                cdl_img = (
+                    ee.Image(cdl_img_id).select(['cropland'])
+                    .remap(cdl_remap_in, cdl_remap_out)
+                )
             elif year < 2008:
                 cdl_img_id = f'{cdl_coll_id}/2008'
-                cdl_img = ee.Image(cdl_img_id).select(['cropland']).remap(remap_in, remap_out)
-                # crop_source = f'{cdl_img_id} - remapped annual crops'
+                cdl_img = (
+                    ee.Image(cdl_img_id).select(['cropland'])
+                    .remap(cdl_remap_in, cdl_remap_out)
+                )
             else:
                 cdl_img_id = f'{cdl_coll_id}/{year}'
                 cdl_img = ee.Image(cdl_img_id).select(['cropland'])
-                # crop_source = f'{cdl_img_id}'
             output_img = output_img.addBands(cdl_img.rename(['cdl_conus_img']))
             properties['cdl_img_id'] = cdl_img_id
 
 
-            # Add a CDL remapped version of the NALCMS 2020 image last
-            # Using 47 for the ag class for now
-            # Mapping the polar classes to 0 for now (11, 12, 13 lichen-moss)
-            # TODO: Doublecheck remap values
-            nalcms_cdl_remap = [
-                [1, 142],   # Temperate or sub-polar needleleaf forest
-                [2, 142],   # Sub-polar taiga needleleaf forest
-                [3, 142],   # Tropical or sub-tropical broadleaf evergreen forest
-                [4, 141],   # Tropical or sub-tropical broadleaf deciduous forest
-                [5, 141],   # Temperate or sub-polar broadleaf deciduous forest
-                [6, 143],   # Mixed forest
-                [7, 152],   # Tropical or sub-tropical shrubland
-                [8, 152],   # Temperate or sub-polar shrubland
-                [9, 176],   # Tropical or sub-tropical grassland
-                [10, 176],  # Temperate or sub-polar grassland
-                [11, 0],    # Sub-polar or polar shrubland-lichen-moss
-                [12, 0],    # Sub-polar or polar grassland-lichen-moss
-                [13, 0],    # Sub-polar or polar barren-lichen-moss
-                [14, 195],  # Wetland
-                [15, 47],   # Cropland
-                [16, 131],  # Barren lands
-                [17, 123],  # Urban and built-up
-                [18, 111],  # Water
-                [19, 112],  # Snow and ice
-            ]
-            nalcms_cdl_remap = list(zip(*nalcms_cdl_remap))
-            nalcms_img_id = 'USGS/NLCD_RELEASES/2020_REL/NALCMS'
+            # Use the remapped NALCMS (North America) image as the fallback image
             nalcms_img = (
                 ee.Image(nalcms_img_id)
                 .remap(nalcms_cdl_remap[0], nalcms_cdl_remap[1])
                 .rename(['nalcms_img'])
             )
             output_img = output_img.addBands(nalcms_img)
-            properties['nalcms_img'] = nalcms_img_id
+            properties['nalcms_img_id'] = nalcms_img_id
 
 
             output_img = (
