@@ -11,6 +11,11 @@ import osgeo
 from osgeo import gdal, ogr, osr
 import pandas as pd
 
+logging.getLogger('earthengine-api').setLevel(logging.INFO)
+logging.getLogger('googleapiclient').setLevel(logging.INFO)
+logging.getLogger('requests').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
+
 PROJECT_NAME = 'openet'
 STORAGE_CLIENT = storage.Client(project=PROJECT_NAME)
 BUCKET_NAME = 'openet_temp'

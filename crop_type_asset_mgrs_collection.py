@@ -15,6 +15,11 @@ import pandas as pd
 import openet.core
 import openet.core.utils as utils
 
+logging.getLogger('earthengine-api').setLevel(logging.INFO)
+logging.getLogger('googleapiclient').setLevel(logging.INFO)
+logging.getLogger('requests').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
+
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
 TOOL_VERSION = '0.3.0'
@@ -57,7 +62,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     cdl_coll_id = 'USDA/NASS/CDL'
 
     # California specific crop type images built from LandIQ crop mapping data
-    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
 
     # The states collection is being used to select the field collections (by name)
     states_coll_id = 'TIGER/2018/States'
@@ -331,20 +336,23 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Mosaic the California LandIQ image for the UTM zone before any CDL images
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year in [2014, 2016, 2018, 2019, 2020, 2021]:
-                    ca_img_id = f'{ca_coll_id}/{year}'
-                    # Should we use the zone specific images instead?
-                    # ca_img_id = f'{ca_coll_id}/2014_zone{mgrs_tiles[:2]}'
+                    # Using the UTM zone projected version of the California image
+                    ca_img_id = f'{ca_coll_id}/{year}_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/{year}'
                     ca_img = ee.Image(ca_img_id)
                 elif year > 2021:
-                    ca_img_id = f'{ca_coll_id}/2021'
+                    ca_img_id = f'{ca_coll_id}/2021_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/2021'
                     ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2015, 2017]:
-                    ca_img_id = f'{ca_coll_id}/{year - 1}'
+                    ca_img_id = f'{ca_coll_id}/{year-1}_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/{year - 1}'
                     ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2009, 2010, 2011, 2012, 2013]:
                     # Use a 2014 remapped annual crop image for pre-2014 years
                     # Remove the urban and managed wetland polygons
-                    ca_img_id = f'{ca_coll_id}/2014'
+                    ca_img_id = f'{ca_coll_id}/2014_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/2014'
                     ca_img = (
                         ee.Image(ca_img_id)
                         .remap(cdl_remap_in, cdl_remap_out)
