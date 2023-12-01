@@ -63,34 +63,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     states_coll_id = 'TIGER/2018/States'
     states_name_property = 'STUSPS'
 
-    # Setting the in between years explicitly
-    # Selecting the previous NLCD year when difference is equal
-    # Will use first/last available year for years outside provided range
-    # TODO: Double check this decision
-    nlcd_img_ids = {
-        2021: 'USGS/NLCD_RELEASES/2021_REL/NLCD/2021',
-        2020: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
-        2019: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
-        2018: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2019',
-        2017: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
-        2016: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
-        2015: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2016',
-        2014: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2013',
-        2013: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2013',
-        2012: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
-        2011: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
-        2010: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2011',
-        2009: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2008',
-        2008: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2008',
-        2007: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2006',
-        2006: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2006',
-        2005: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
-        2004: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
-        2003: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2004',
-        2002: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2001',
-        2001: 'USGS/NLCD_RELEASES/2019_REL/NLCD/2001',
-    }
-
     supported_mgrs_tiles = [
         '10S', '10T', '10U', '11R', '11S', '11T', '11U', '12R', '12S', '12T', '12U',
         '13R', '13S', '13T', '13U', '14R', '14S', '14T', '14U', '15R', '15S', '15T', '15U',
@@ -391,14 +363,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                     properties['custom_ca_img_id'] = ca_img_id
 
 
-            # Select the NLCD year
-            # Use the first/last available year if outside the available range
-            nlcd_year = min(year, max(nlcd_img_ids.keys()))
-            nlcd_year = max(nlcd_year, min(nlcd_img_ids.keys()))
-            nlcd_img_id = nlcd_img_ids[nlcd_year]
-            nlcd_img = ee.Image(nlcd_img_id).select('landcover')
-
-
             # For California, always use the annual remapped CDL
             # This is different than the generic CDL section below where the
             #   annual remap is only used for pre-2008 and current years
@@ -416,11 +380,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 ca_cdl_img = (
                     ee.Image(ca_cdl_img_id).select(['cropland'])
                     .remap(cdl_remap_in, cdl_remap_out)
-                )
-                # Change any CDL 176 and NLCD 81/82 pixels to 37
-                ca_cdl_img = ca_cdl_img.where(
-                    ca_cdl_img.eq(176).And(nlcd_img.eq(81).Or(nlcd_img.eq(82))),
-                    37
                 )
                 # The clip could be changed to a mask using the CIMIS mask?
                 ca_geom = (
@@ -450,11 +409,6 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             else:
                 cdl_img_id = f'{cdl_coll_id}/{year}'
                 cdl_img = ee.Image(cdl_img_id).select(['cropland'])
-            # Change any CDL 176 and NLCD 81/82 pixels to 37
-            cdl_img = cdl_img.where(
-                cdl_img.eq(176).And(nlcd_img.eq(81).Or(nlcd_img.eq(82))),
-                37
-            )
             output_img = output_img.addBands(cdl_img.rename(['cdl_conus_img']))
             properties['cdl_img_id'] = cdl_img_id
 

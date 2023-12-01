@@ -6,7 +6,7 @@ This tool is used to generate the crop type image assets.  The crop type images 
 
 For each year, the following images are stacked and reduced using a firstNonNull reducer, so that pixels inside/touching a field get a single crop type, while those outside the field boundaries get the "best" or closest in time value from LandIQ or CDL.
 
-- All fields with a crop type > 0 for that year are rasterized
+- All fields with a crop type > 0 (and not equal to 176) for that year are rasterized
 - All non-California MGRS tiles
   - Cropland Data Layer (CDL)
     - Years < 2008, use the annual crop remapped 2008 CDL image
@@ -14,11 +14,11 @@ For each year, the following images are stacked and reduced using a firstNonNull
     - Years after the last CDL year, use the remapped last CDL image
 - California MGRS tiles 10S, 10T, 11S
   - LandIQ for California MGRS tiles 10S, 10T, 11S
-      - 2014, 2016, 2018, use the LandIQ image directly
-      - 2009-2013, use the remapped 2014.  
+      - 2014, 2016, 2018, 2019, 2020, 2021: use the LandIQ image directly
+      - 2009-2013: use the remapped 2014.  
         - Note, the urban and managed wetland pixels are masked after remapping for these 5 years (check if this masking is needed for other years).
-      - 2015 & 2017, use the remapped previous year (2014 and 2016)
-      - 2019+, use the remapped 2018 year
+      - 2015 and 2017: use the remapped previous year (2014 and 2016)
+      - 2022+: use the remapped 2021 year
   - Cropland Data Layer (CDL)
     - Almost the same as the approach for the non-California tiles above, except that we always use the annual crop remapped version of the CDL to fill any holes that might be in the LandIQ images
 
