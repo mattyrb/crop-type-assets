@@ -24,3 +24,7 @@ dist/
 
 # MacOS
 *.DS_Store
+
+# Project files
+california/source
+*.zip
