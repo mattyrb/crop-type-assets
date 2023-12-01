@@ -4,36 +4,36 @@ Almonds,75,
 Apples,68,
 Avocados,215,
 Beans (Dry),42,
-Bush Berries,242,Using Blueberries
+Bush Berries,242,CDL Blueberries
 Carrots,206,
 Cherries,66,
 Citrus,72,
 Cole Crops,214,
-Corn Sorghum and Sudan,1,
+"Corn, Sorghum and Sudan",1,
 Cotton,2,
-Dates,71,Mapped to CDL Other Tree Crops
+Dates,71,CDL Other Tree Crops
 Grapes,69,
-Idle,61,
-Kiwis,71,Using Other Tree Crops
-Lettuce/Leafy Greens,227,
-Managed Wetland,87,
-Melons Squash and Cucumbers,48,
-Miscellaneous Deciduous,141,(CGM should this be mapped to an ag class like 71 Other Tree Crops?)
-Miscellaneous Field Crops,47,Using Misc Vegs & Fruits
+Idle,61,CDL Fallow
+Kiwis,71,CDL Other Tree Crops
+Lettuce/Leafy Greens,227,CDL Lettuce
+Managed Wetland,87,CDL Wetlands
+"Melons, Squash and Cucumbers",48,CDL Watermelons
+Miscellaneous Deciduous,71,CDL Other Tree Crops
+Miscellaneous Field Crops,47,CDL Misc Vegs & Fruits
 Miscellaneous Grasses,176,
 Miscellaneous Grain and Hay,25,
 Miscellaneous Subtropical Fruits,47,
 Miscellaneous Truck Crops,47,
 Mixed Pasture,176,
 Olives,211,
-Onions and Garlic,49,Mapped to CDL Onions
-Peaches/Nectarines,67,Mapped to CDL Peaches
+Onions and Garlic,49,CDL Onions
+Peaches/Nectarines,67,CDL Peaches
 Pears,77,
 Peppers,216,
 Pistachios,204,
-Plums Prunes and Apricots,220,Mapped to CDL Plums
+"Plums, Prunes and Apricots",220,CDL Plums
 Pomegranates,217,
-Potatoes and Sweet Potatoes,43,Mapped to CDL Potatoes
+Potatoes and Sweet Potatoes,43,CDL Potatoes
 Rice,3,
 Safflower,33,
 Strawberries,221,
@@ -42,7 +42,7 @@ Tomatoes,54,
 Urban,82,
 Walnuts,76,
 Wheat,23,
-Wild Rice,3,Mapped to CDL Rice
-Young Perennials,71,This is the Other Tree Crop code?
-Flowers Nursery and Christmas Tree Farms,47,Mapped to CDL Misc Vegs & Fruits
-Greenhouse,122,Mapped to CDL Developed/Low Intensity
+Wild Rice,3,CDL Rice
+Young Perennials,71,CDL Other Tree Crops (CGM - double check mapping)
+"Flowers, Nursery and Christmas Tree Farms",47,CDL Misc Vegs & Fruits
+Greenhouse,122,CDL Developed/Low Intensity
