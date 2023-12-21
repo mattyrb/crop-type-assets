@@ -26,5 +26,7 @@ dist/
 *.DS_Store
 
 # Project files
+california/images
+california/shapefiles
 california/sources
 *.zip

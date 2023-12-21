@@ -4,7 +4,7 @@
 #--------------------------------
 
 import argparse
-import datetime
+from datetime import datetime, timezone
 import logging
 import os
 import pprint
@@ -14,6 +14,11 @@ import pandas as pd
 
 import openet.core
 import openet.core.utils as utils
+
+logging.getLogger('earthengine-api').setLevel(logging.INFO)
+logging.getLogger('googleapiclient').setLevel(logging.INFO)
+logging.getLogger('requests').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
@@ -42,7 +47,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     logging.info('\nBuild crop type MGRS tiles from the crop feature collections')
 
     # Hardcoded parameters
-    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022b'
+    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022c'
     # export_band_name = 'crop_type'
 
     crop_type_folder_id = ('projects/earthengine-legacy/assets/'
@@ -57,7 +62,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     cdl_coll_id = 'USDA/NASS/CDL'
 
     # California specific crop type images built from LandIQ crop mapping data
-    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
 
     # The states collection is being used to select the field collections (by name)
     states_coll_id = 'TIGER/2018/States'
@@ -91,12 +96,12 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             if ((year <= year_max) and (year >= year_min))
         )
         years = sorted(list(years))
-    logging.info(f'Years:    {", ".join(map(str, years))}')
+    logging.info(f'Years: {", ".join(map(str, years))}')
 
     if mgrs_tiles:
         mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
         # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
-        logging.info(f'Tiles:    {", ".join(mgrs_tiles)}')
+        logging.info(f'Tiles: {", ".join(mgrs_tiles)}')
 
     # Limit the MGRS tile list to the default tile list (if set)
     # Otherwise just use the supported tile list
@@ -209,6 +214,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
 
     # Get the last available CDL year
+    cdl_year_min = 2008
     cdl_year_max = int(utils.get_info(
         ee.ImageCollection(cdl_coll_id)
         .limit(1, 'system:time_start', False).first()
@@ -297,7 +303,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 'core_version': openet.core.__version__,
                 'crop_type_folder': crop_type_folder_id,
                 'crop_type_states': ','.join(mgrs_states),
-                'date_ingested': datetime.datetime.today().strftime('%Y-%m-%d'),
+                'date_ingested': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'mgrs_tile': mgrs_tile,
                 'tool_name': TOOL_NAME,
                 'tool_version': TOOL_VERSION,
@@ -311,11 +317,11 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # 176 fields will not be burned in (for now)
             # Long term they should probably be reassigned in the field collections
             # Added the uint8 since image was coming back as a double
-            # The weird filtering on the 176 value is to try and handle floating
-            #   point values in the crop type values in the feature collections
+            # Filtering on +/-0.5 values to handle floating point numbers in the crop types
             field_filter = (
                 ee.Filter.gt(crop_type_field, 0)
                 .And(ee.Filter.lt(crop_type_field, 175.5).Or(ee.Filter.gt(crop_type_field, 176.5)))
+                # .And(ee.Filter.lt(crop_type_field, 80.5).Or(ee.Filter.gt(crop_type_field, 195.5)))
             )
             field_img = (
                 field_coll
@@ -330,25 +336,28 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Mosaic the California LandIQ image for the UTM zone before any CDL images
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year in [2014, 2016, 2018, 2019, 2020, 2021]:
-                    ca_img_id = f'{ca_coll_id}/{year}'
-                    # Should we use the zone specific images instead?
-                    # ca_img_id = f'{ca_coll_id}/2014_zone{mgrs_tiles[:2]}'
+                    # Using the UTM zone projected version of the California image
+                    ca_img_id = f'{ca_coll_id}/{year}_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/{year}'
                     ca_img = ee.Image(ca_img_id)
                 elif year > 2021:
-                    ca_img_id = f'{ca_coll_id}/2021'
+                    ca_img_id = f'{ca_coll_id}/2021_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/2021'
                     ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2015, 2017]:
-                    ca_img_id = f'{ca_coll_id}/{year - 1}'
+                    ca_img_id = f'{ca_coll_id}/{year-1}_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/{year - 1}'
                     ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2009, 2010, 2011, 2012, 2013]:
                     # Use a 2014 remapped annual crop image for pre-2014 years
                     # Remove the urban and managed wetland polygons
-                    ca_img_id = f'{ca_coll_id}/2014'
+                    ca_img_id = f'{ca_coll_id}/2014_utm{mgrs_tile[:2]}'
+                    # ca_img_id = f'{ca_coll_id}/2014'
                     ca_img = (
                         ee.Image(ca_img_id)
                         .remap(cdl_remap_in, cdl_remap_out)
-                        .updateMask(ee.Image(ca_img_id).neq(82)
-                                    .And(ee.Image(ca_img_id).neq(87)))
+                        .updateMask(ee.Image(ca_img_id).neq(82))
+                        .updateMask(ee.Image(ca_img_id).neq(87))
                     )
                 elif year < 2009:
                     # Don't include before 2009
@@ -368,27 +377,26 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Use a 2008 remapped annual crop image for all pre-2008 years
             # For all years after the last available CDL year,
             #   use an annual crop remapped version of the last CDL year
-            # Never use the CA 2007 image
             if mgrs_tile in ['10S', '10T', '11S']:
-                if year < 2008:
-                    cdl_img_id = f'{cdl_coll_id}/2008'
+                if year < cdl_year_min:
+                    ca_img_id = f'{cdl_coll_id}/{cdl_year_min}'
                 elif year > cdl_year_max:
-                    cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
+                    ca_img_id = f'{cdl_coll_id}/{cdl_year_max}'
                 else:
-                    cdl_img_id = f'{cdl_coll_id}/{year}'
-                # The clip could be changed to a mask using the CIMIS mask?
-                ca_ftr = (
-                    ee.FeatureCollection('TIGER/2018/States')
-                    .filterMetadata('STUSPS', 'equals', 'CA')
-                    .first()
-                )
-                cdl_ca_img = (
-                    ee.Image(cdl_img_id).select(['cropland'])
+                    ca_cdl_img_id = f'{cdl_coll_id}/{year}'
+
+                ca_cdl_img = (
+                    ee.Image(ca_cdl_img_id).select(['cropland'])
                     .remap(cdl_remap_in, cdl_remap_out)
-                    .clip(ca_ftr.geometry())
                 )
-                output_img = output_img.addBands(cdl_ca_img.rename(['cdl_ca_img']))
-                properties['cdl_ca_img_id'] = cdl_ca_img
+                # The clip could be changed to a mask using the CIMIS mask?
+                ca_geom = (
+                    ee.FeatureCollection('TIGER/2018/States')
+                    .filterMetadata('STUSPS', 'equals', 'CA').first().geometry()
+                )
+                ca_cdl_img = ca_cdl_img.clip(ca_geom)
+                output_img = output_img.addBands(ca_cdl_img.rename(['cdl_ca_img']))
+                properties['cdl_ca_img_id'] = ca_cdl_img_id
 
 
             # For any years after the last available CDL year
@@ -400,8 +408,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                     ee.Image(cdl_img_id).select(['cropland'])
                     .remap(cdl_remap_in, cdl_remap_out)
                 )
-            elif year < 2008:
-                cdl_img_id = f'{cdl_coll_id}/2008'
+            elif year < cdl_year_min:
+                cdl_img_id = f'{cdl_coll_id}/{cdl_year_min}'
                 cdl_img = (
                     ee.Image(cdl_img_id).select(['cropland'])
                     .remap(cdl_remap_in, cdl_remap_out)
@@ -423,6 +431,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             properties['nalcms_img_id'] = nalcms_img_id
 
 
+            # Build the output image from the stack
             output_img = (
                 output_img
                 .reduce(ee.Reducer.firstNonNull())

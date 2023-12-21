@@ -1,5 +1,5 @@
 import argparse
-import datetime
+from datetime import datetime, timezone
 import logging
 import math
 import os
@@ -10,6 +10,11 @@ from google.cloud import storage
 import osgeo
 from osgeo import gdal, ogr, osr
 import pandas as pd
+
+logging.getLogger('earthengine-api').setLevel(logging.INFO)
+logging.getLogger('googleapiclient').setLevel(logging.INFO)
+logging.getLogger('requests').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 PROJECT_NAME = 'openet'
 STORAGE_CLIENT = storage.Client(project=PROJECT_NAME)
@@ -48,7 +53,7 @@ def main(years, overwrite_flag=False):
                            'i15_Crop_Mapping_2021_Provisional.shp'),
     }
 
-    collection_folder = 'projects/earthengine-legacy/assets/projects/openet/crop_type/land_iq'
+    collection_folder = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
 
     band_name = 'cropland'
 
@@ -278,11 +283,11 @@ def main(years, overwrite_flag=False):
             'name': asset_id,
             'bands': [{'id': band_name, 'tilesetId': 'image'}],
             'tilesets': [{'id': 'image', 'sources': [{'uris': [bucket_path]}]}],
-            'startTime': datetime.datetime(year, 1, 1).isoformat() + '.000000000Z',
+            'startTime': datetime(year, 1, 1).isoformat() + '.000000000Z',
             'pyramidingPolicy': 'MODE',
-            # 'properties': {
-            #     date_property: f'{datetime.datetime.today().strftime("%Y-%m-%d")}',
-            # },
+            'properties': {
+                'date_updated': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+            },
         }
         try:
             ee.data.startIngestion(task_id, params, allow_overwrite=True)
@@ -297,7 +302,7 @@ def main(years, overwrite_flag=False):
             logging.info(f'Rasterizing fields for UTM zone {utm_zone}')
 
             tif_path = os.path.join(tif_ws, f'ca{year}_cdl_utm{utm_zone}.tif')
-            bucket_path = f'gs://{BUCKET_FOLDER}/{BUCKET_NAME}/{os.path.basename(tif_path)}'
+            bucket_path = f'gs://{BUCKET_NAME}/{BUCKET_FOLDER}/{os.path.basename(tif_path)}'
             asset_id = f'{collection_folder}/{year}_utm{utm_zone}'
             logging.info(f'  {tif_path}')
             logging.info(f'  {bucket_path}')
@@ -388,11 +393,11 @@ def main(years, overwrite_flag=False):
                 'name': asset_id,
                 'bands': [{'id': band_name, 'tilesetId': 'image'}],
                 'tilesets': [{'id': 'image', 'sources': [{'uris': [bucket_path]}]}],
-                'startTime': datetime.datetime(year, 1, 1).isoformat() + '.000000000Z',
+                'startTime': datetime(year, 1, 1).isoformat() + '.000000000Z',
                 'pyramidingPolicy': 'MODE',
-                # 'properties': {
-                #     date_property: '{datetime.datetime.today().strftime("%Y-%m-%d")}',
-                # },
+                'properties': {
+                    'date_updated': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                },
             }
             try:
                 ee.data.startIngestion(task_id, params, allow_overwrite=True)

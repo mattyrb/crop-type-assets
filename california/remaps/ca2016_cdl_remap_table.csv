@@ -1,4 +1,4 @@
-﻿IN,OUT,NOTES
+IN,OUT,NOTES
 Alfalfa and Alfalfa Mixtures,36,
 Almonds,75,
 Apples,68,
@@ -18,13 +18,13 @@ Kiwis,71,CDL Other Tree Crops
 Lettuce/Leafy Greens,227,CDL Lettuce
 Managed Wetland,87,CDL Wetlands
 "Melons, Squash and Cucumbers",48,CDL Watermelons
-Miscellaneous Deciduous,141,(CGM should this be mapped to an ag class like CDL 71 Other Tree Crops?)
+Miscellaneous Deciduous,71,CDL Other Tree Crops
 Miscellaneous Field Crops,47,CDL Misc Vegs & Fruits
-Miscellaneous Grasses,176,
+Miscellaneous Grasses,37,CDL Other Hay/Non Alfalfa
 Miscellaneous Grain and Hay,25,
 Miscellaneous Subtropical Fruits,47,
 Miscellaneous Truck Crops,47,
-Mixed Pasture,176,
+Mixed Pasture,37,CDL Other Hay/Non Alfalfa
 Olives,211,
 Onions and Garlic,49,CDL Onions
 Peaches/Nectarines,67,CDL Peaches
@@ -43,6 +43,6 @@ Urban,82,CDL Developed
 Walnuts,76,
 Wheat,23,
 Wild Rice,3,CDL Rice
-Young Perennials,71,CDL Other Tree Crops
+Young Perennials,71,CDL Other Tree Crops (CGM - double check mapping)
 "Flowers, Nursery and Christmas Tree Farms",47,CDL Misc Vegs & Fruits
 Greenhouse,122,CDL Developed/Low Intensity

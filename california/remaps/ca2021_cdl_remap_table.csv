@@ -31,7 +31,7 @@ P7,59,Turf Farms (CDL Sod/Grass Seed)
 UL2,59,Golf course – irrigated (CDL Sod/Grass Seed)
 I1,61,
 I4,61,Idle long term land consistently idle for four or more years (CDL Fallow)
-X,61,Not cropped or unclassified
+X,61,Not cropped or unclassified (CDL Fallow)
 D3,66,
 D5,67,
 D1,68,
@@ -50,13 +50,13 @@ D13,76,Walnuts
 D6,77,Pears
 U,82,Developed
 T27,122,Greenhouse (CDL Developed/Low Intensity)
-D10,141,Miscellaneous deciduous (CGM should this be mapped to an ag class like 71 Other Tree Crops?)
-D11,141,Mixed deciduous (CGM should this be mapped to an ag class like 71 Other Tree Crops?)
-P,176,Pasture (CGM should this be mapped to 37 instead?)
-P3,176,Mixed pasture (CGM should this be mapped to 37 instead?)
-P4,176,Native pasture (CGM should this be mapped to 37 instead?)
-P5,176,Induced high water table native pasture (CGM should this be mapped to 37 instead?)
-P6,176,Miscellaneous grasses (CGM should this be mapped to 37 instead?)
+D10,71,Miscellaneous deciduous (CDL Other Tree Crops)
+D11,71,Mixed deciduous (CDL Other Tree Crops)
+P,37,Pasture (CDL Other Hay/Non Alfalfa)
+P3,37,Mixed pasture (CDL Other Hay/Non Alfalfa)
+P4,37,Native pasture (CDL Other Hay/Non Alfalfa)
+P5,37,Induced high water table native pasture (CDL Other Hay/Non Alfalfa)
+P6,37,Miscellaneous grasses (CDL Other Hay/Non Alfalfa)
 D14,204,Pistachios
 T6,206,Carrots
 D8,210,Prunes
