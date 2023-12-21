@@ -39,10 +39,10 @@ U,82,Developed
 T27,122,Greenhouse (CDL Developed/Low Intensity)
 D10,71,Miscellaneous deciduous (CDL Other Tree Crops)
 D11,71,Mixed deciduous (CDL Other Tree Crops)
-P,176,Pasture (CGM should this be mapped to 37 instead?)
-P3,176,Mixed pasture (CGM should this be mapped to 37 instead?)
-P4,176,Native pasture (CGM should this be mapped to 37 instead?)
-P6,176,Miscellaneous grasses (CGM should this be mapped to 37 instead?)
+P,37,Pasture (CDL Other Hay/Non Alfalfa)
+P3,37,Mixed pasture (CDL Other Hay/Non Alfalfa)
+P4,37,Native pasture (CDL Other Hay/Non Alfalfa)
+P6,37,Miscellaneous grasses (CDL Other Hay/Non Alfalfa)
 D14,204,Pistachios
 T6,206,Carrots
 C6,211,Olives

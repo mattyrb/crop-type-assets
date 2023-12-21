@@ -9,7 +9,7 @@ Carrots,206,
 Cherries,66,
 Citrus,72,
 Cole Crops,214,
-Corn Sorghum and Sudan,1,
+"Corn, Sorghum and Sudan",1,
 Cotton,2,
 Dates,71,CDL Other Tree Crops
 Grapes,69,
@@ -20,11 +20,11 @@ Managed Wetland,87,CDL Wetlands
 "Melons, Squash and Cucumbers",48,CDL Watermelons
 Miscellaneous Deciduous,71,CDL Other Tree Crops
 Miscellaneous Field Crops,47,CDL Misc Vegs & Fruits
-Miscellaneous Grasses,176,
+Miscellaneous Grasses,37,CDL Other Hay/Non Alfalfa
 Miscellaneous Grain and Hay,25,
 Miscellaneous Subtropical Fruits,47,
 Miscellaneous Truck Crops,47,
-Mixed Pasture,176,
+Mixed Pasture,37,CDL Other Hay/Non Alfalfa
 Olives,211,
 Onions and Garlic,49,CDL Onions
 Peaches/Nectarines,67,CDL Peaches
