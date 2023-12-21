@@ -4,7 +4,7 @@
 #--------------------------------
 
 import argparse
-import datetime
+from datetime import datetime, timezone
 import logging
 import os
 import pprint
@@ -303,7 +303,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 'core_version': openet.core.__version__,
                 'crop_type_folder': crop_type_folder_id,
                 'crop_type_states': ','.join(mgrs_states),
-                'date_ingested': datetime.datetime.today().strftime('%Y-%m-%d'),
+                'date_ingested': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'mgrs_tile': mgrs_tile,
                 'tool_name': TOOL_NAME,
                 'tool_version': TOOL_VERSION,
@@ -317,11 +317,11 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # 176 fields will not be burned in (for now)
             # Long term they should probably be reassigned in the field collections
             # Added the uint8 since image was coming back as a double
-            # The weird filtering on the 176 value is to try and handle floating
-            #   point values in the crop type values in the feature collections
+            # Filtering on +/-0.5 values to handle floating point numbers in the crop types
             field_filter = (
                 ee.Filter.gt(crop_type_field, 0)
                 .And(ee.Filter.lt(crop_type_field, 175.5).Or(ee.Filter.gt(crop_type_field, 176.5)))
+                # .And(ee.Filter.lt(crop_type_field, 80.5).Or(ee.Filter.gt(crop_type_field, 195.5)))
             )
             field_img = (
                 field_coll
@@ -356,8 +356,8 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                     ca_img = (
                         ee.Image(ca_img_id)
                         .remap(cdl_remap_in, cdl_remap_out)
-                        .updateMask(ee.Image(ca_img_id).neq(82)
-                                    .And(ee.Image(ca_img_id).neq(87)))
+                        .updateMask(ee.Image(ca_img_id).neq(82))
+                        .updateMask(ee.Image(ca_img_id).neq(87))
                     )
                 elif year < 2009:
                     # Don't include before 2009
