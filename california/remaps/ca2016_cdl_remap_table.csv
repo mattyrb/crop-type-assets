@@ -1,4 +1,4 @@
-﻿IN,OUT,NOTES
+IN,OUT,NOTES
 Alfalfa and Alfalfa Mixtures,36,
 Almonds,75,
 Apples,68,
@@ -9,7 +9,7 @@ Carrots,206,
 Cherries,66,
 Citrus,72,
 Cole Crops,214,
-"Corn, Sorghum and Sudan",1,
+"Corn, Sorghum and Sudan",1,CDL Corn
 Cotton,2,
 Dates,71,CDL Other Tree Crops
 Grapes,69,
@@ -39,7 +39,7 @@ Safflower,33,
 Strawberries,221,
 Sunflowers,6,
 Tomatoes,54,
-Urban,82,
+Urban,82,CDL Developed
 Walnuts,76,
 Wheat,23,
 Wild Rice,3,CDL Rice
