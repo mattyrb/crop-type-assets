@@ -22,16 +22,24 @@ logging.getLogger('urllib3').setLevel(logging.INFO)
 
 TOOL_NAME = 'crop_type_asset_mgrs_collection'
 # TOOL_NAME = os.path.basename(__file__)
-TOOL_VERSION = '0.3.0'
+TOOL_VERSION = '0.3.1'
 
 
-def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_file=None):
+def main(
+        years=None,
+        mgrs_tiles=None,
+        utm_zones=None,
+        overwrite_flag=False,
+        delay=0,
+        gee_key_file=None
+        ):
     """Build and ingest crop type MGRS tiles from a feature collection
 
     Parameters
     ----------
     years : list, optional
     mgrs_tiles : list, optional
+    utm_zones : list, optional
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
     delay : float, optional
@@ -47,11 +55,13 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     logging.info('\nBuild crop type MGRS tiles from the crop feature collections')
 
     # Hardcoded parameters
-    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2022c'
+    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2023a'
     # export_band_name = 'crop_type'
 
     crop_type_folder_id = ('projects/earthengine-legacy/assets/'
-                           'projects/openet/featureCollections/2022-03-15b')
+                           'projects/openet/featureCollections/2024-01-08')
+    # crop_type_folder_id = ('projects/earthengine-legacy/assets/'
+    #                        'projects/openet/featureCollections/temp')
 
     # Using ERA5-Land MGRS tiles to avoid clipping outside CONUS
     mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zones'
@@ -83,7 +93,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
     annual_remap_path = os.path.join(os.getcwd(), 'cdl_annual_crop_remap_table.csv')
 
-    year_min = 2000
+    year_min = 1985
     year_max = 2023
 
     # Parse user inputs
@@ -101,7 +111,7 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
     if mgrs_tiles:
         mgrs_tiles = sorted([y.strip() for x in mgrs_tiles for y in x.split(',')])
         # mgrs_tiles = sorted([x.strip() for x in mgrs_tiles.split(',')])
-        logging.info(f'Tiles: {", ".join(mgrs_tiles)}')
+        logging.info(f'User MGRS Tiles: {", ".join(mgrs_tiles)}')
 
     # Limit the MGRS tile list to the default tile list (if set)
     # Otherwise just use the supported tile list
@@ -109,6 +119,11 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
         mgrs_tiles = [mgrs for mgrs in mgrs_tiles if mgrs in supported_mgrs_tiles]
     else:
         mgrs_tiles = supported_mgrs_tiles[:]
+
+    if utm_zones:
+        utm_zones = sorted([y.strip() for x in utm_zones for y in x.split(',')])
+        mgrs_tiles = [mgrs for mgrs in mgrs_tiles if mgrs[:2] in utm_zones]
+    logging.info(f'MGRS Tiles: {", ".join(mgrs_tiles)}')
 
 
     # Load the CDL annual crop remap
@@ -251,11 +266,14 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
 
         logging.info('  Building crop type feature collection')
         field_coll = ee.FeatureCollection([])
-        field_states = sorted(list(set(mgrs_states) | set(crop_type_states)))
-        logging.info(f'    States: {", ".join(sorted(mgrs_states))}')
+        # CGM - I think this should be an "and", and the check in the loop isn't needed
+        field_states = sorted(list(set(mgrs_states) & set(crop_type_states)))
+        # field_states = sorted(list(set(mgrs_states) | set(crop_type_states)))
+        logging.info(f'    States: {", ".join(sorted(field_states))}')
         for state in field_states:
-            if state not in crop_type_states:
-                continue
+            # if state not in crop_type_states:
+            #     continue
+            # logging.debug(f'    {state}')
             crop_type_coll_id = f'{crop_type_folder_id}/{state.upper()}'
             crop_type_coll = ee.FeatureCollection(crop_type_coll_id).filterBounds(mgrs_geom)
             field_coll = field_coll.merge(crop_type_coll)
@@ -309,6 +327,13 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
                 'tool_version': TOOL_VERSION,
             }
 
+            # # DEADBEEF
+            # print(
+            #     field_coll.filter(ee.Filter.gt(crop_type_field, 0))
+            #     .filter(ee.Filter.rangeContains(crop_type_field, 80.5, 195.5).Not())
+            #     .size().getInfo()
+            # )
+            # input('ENTER')
 
             # Start with the MGRS mask set to 0
             output_img = mgrs_mask_img.updateMask(0)
@@ -318,14 +343,9 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             # Long term they should probably be reassigned in the field collections
             # Added the uint8 since image was coming back as a double
             # Filtering on +/-0.5 values to handle floating point numbers in the crop types
-            field_filter = (
-                ee.Filter.gt(crop_type_field, 0)
-                .And(ee.Filter.lt(crop_type_field, 175.5).Or(ee.Filter.gt(crop_type_field, 176.5)))
-                # .And(ee.Filter.lt(crop_type_field, 80.5).Or(ee.Filter.gt(crop_type_field, 195.5)))
-            )
             field_img = (
-                field_coll
-                .filter(field_filter)
+                field_coll.filter(ee.Filter.gt(crop_type_field, 0))
+                .filter(ee.Filter.rangeContains(crop_type_field, 80.5, 195.5).Not())
                 .reduceToImage([crop_type_field], ee.Reducer.first())
                 .round().uint8()
             )
@@ -379,9 +399,9 @@ def main(years=None, mgrs_tiles=None, overwrite_flag=False, delay=0, gee_key_fil
             #   use an annual crop remapped version of the last CDL year
             if mgrs_tile in ['10S', '10T', '11S']:
                 if year < cdl_year_min:
-                    ca_img_id = f'{cdl_coll_id}/{cdl_year_min}'
+                    ca_cdl_img_id = f'{cdl_coll_id}/{cdl_year_min}'
                 elif year > cdl_year_max:
-                    ca_img_id = f'{cdl_coll_id}/{cdl_year_max}'
+                    ca_cdl_img_id = f'{cdl_coll_id}/{cdl_year_max}'
                 else:
                     ca_cdl_img_id = f'{cdl_coll_id}/{year}'
 
@@ -597,8 +617,11 @@ def arg_parse():
         description='Build crop type MGRS tiles from state feature collections',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--tiles', default='', nargs='+',
+        '--mgrs', default='', nargs='+',
         help='Comma/space separated list of MGRS tiles')
+    parser.add_argument(
+        '--utm', default='', nargs='+',
+        help='Comma/space separated list of UTM zones')
     parser.add_argument(
         '--years', default='', nargs='+',
         help='Comma separated list and/or range of years')
@@ -626,7 +649,8 @@ if __name__ == '__main__':
 
     main(
         years=args.years,
-        mgrs_tiles=args.tiles,
+        mgrs_tiles=args.mgrs,
+        utm_zones=args.utm,
         overwrite_flag=args.overwrite,
         delay=args.delay,
         gee_key_file=args.key,
