@@ -355,13 +355,13 @@ def main(
 
             # Mosaic the California LandIQ image for the UTM zone before any CDL images
             if mgrs_tile in ['10S', '10T', '11S']:
-                if year in [2014, 2016, 2018, 2019, 2020, 2021]:
+                if year in [2014, 2016, 2018, 2019, 2020, 2021, 2022]:
                     # Using the UTM zone projected version of the California image
                     ca_img_id = f'{ca_coll_id}/{year}_utm{mgrs_tile[:2]}'
                     # ca_img_id = f'{ca_coll_id}/{year}'
                     ca_img = ee.Image(ca_img_id)
-                elif year > 2021:
-                    ca_img_id = f'{ca_coll_id}/2021_utm{mgrs_tile[:2]}'
+                elif year > 2022:
+                    ca_img_id = f'{ca_coll_id}/2022_utm{mgrs_tile[:2]}'
                     # ca_img_id = f'{ca_coll_id}/2021'
                     ca_img = ee.Image(ca_img_id).remap(cdl_remap_in, cdl_remap_out)
                 elif year in [2015, 2017]:

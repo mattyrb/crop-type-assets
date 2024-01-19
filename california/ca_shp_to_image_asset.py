@@ -20,7 +20,7 @@ PROJECT_NAME = 'openet'
 STORAGE_CLIENT = storage.Client(project=PROJECT_NAME)
 BUCKET_NAME = 'openet_temp'
 BUCKET_FOLDER = 'landiq'
-YEARS = [2014, 2016, 2018, 2019, 2020, 2021]
+YEARS = [2014, 2016, 2018, 2019, 2020, 2021, 2022]
 
 
 def main(years, overwrite_flag=False):
@@ -51,6 +51,8 @@ def main(years, overwrite_flag=False):
         # 2021: os.path.join(src_ws, 'i15_Crop_Mapping_2021', 'i15_Crop_Mapping_2021.shp'),
         2021: os.path.join(src_ws, 'i15_Crop_Mapping_2021_Provisional_SHP',
                            'i15_Crop_Mapping_2021_Provisional.shp'),
+        2022: os.path.join(src_ws, 'i15_Crop_Mapping_2022_Provisional_SHP',
+                           'i15_Crop_Mapping_2022_Provisional.shp'),
     }
 
     collection_folder = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
@@ -73,7 +75,7 @@ def main(years, overwrite_flag=False):
         # Building projections from EPSG codes by year instead of reading from
         #   the shapefiles later on
         input_srs = osr.SpatialReference()
-        if year in [2019, 2020, 2021]:
+        if year in [2019, 2020, 2021, 2022]:
             input_srs.ImportFromEPSG(4269)
         elif year in [2014, 2016, 2018]:
             input_srs.ImportFromEPSG(3857)
@@ -135,7 +137,7 @@ def main(years, overwrite_flag=False):
             for src_ftr in src_layer:
                 src_fid = src_ftr.GetFID()
                 geometry = src_ftr.GetGeometryRef().Clone()
-                if year in [2019, 2020, 2021]:
+                if year in [2019, 2020, 2021, 2022]:
                     crop_type = src_ftr.GetField(f'CROPTYP2')
                     main_crop = src_ftr.GetField(f'MAIN_CROP')
                 elif year in [2018]:
