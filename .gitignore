@@ -29,4 +29,9 @@ dist/
 california/images
 california/shapefiles
 california/sources
+fields/backup_zips
+fields/csv
+fields/shapefiles
+fields/source_zips
+fields/updated_zips
 *.zip
