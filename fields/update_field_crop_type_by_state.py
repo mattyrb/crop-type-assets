@@ -67,7 +67,7 @@ def main(states, years=[], overwrite_flag=False):
     # This CDL start year is for the full CONUS images, but CDL does exist for
     #   some states back to 1997 (see cdl_year_states dictionary below)
     cdl_year_min = 2008
-    cdl_year_max = 2022
+    cdl_year_max = 2023
 
     # Min/max year range to process
     year_min = 1997

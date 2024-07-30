@@ -38,15 +38,11 @@ def main(states, overwrite_flag=False):
     bucket_folder = ''
     # bucket_folder = 'gs://openet_field_boundaries'
 
+    project_id = 'projects/openet/assets'
+
     # For now write the fields to a temp folder
-    collection_folder = (
-        'projects/earthengine-legacy/assets/'
-        'projects/openet/featureCollections/temp'
-    )
-    # collection_folder = (
-    #     'projects/earthengine-legacy/assets/'
-    #     'projects/openet/featureCollections/2023-12-21'
-    # )
+    collection_folder = f'{project_id}/features/fields/temp'
+    # collection_folder = f'{project_id}/features/fields/2024-02-01'
 
     if states == ['ALL']:
         # 'AL' is not included since there is not an Alabama field shapefile

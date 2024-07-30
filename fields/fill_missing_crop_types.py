@@ -29,26 +29,12 @@ def main(states, years=[], overwrite_flag=False):
 
     remap_path = os.path.join(os.path.dirname(field_ws), 'cdl_annual_crop_remap_table.csv')
 
-    # year_min = 1997
-    # year_max = 2020
-    # if not years:
-    #     years = list(range(year_min, year_max+1))
-    # else:
-    #     years = sorted(list(set(
-    #         int(year) for year_str in years
-    #         for year in utils.str_ranges_2_list(year_str)
-    #         if ((year <= year_max) and (year >= year_min))
-    #     )))
-    # logging.info(f'Years:  {", ".join(map(str, years))}')
-
     cdl_annual_remap_years = []
-    # CGM - This line can be commented out once 2023 CDL is available
-    cdl_annual_remap_years.append([2022, 2023])
+    # CGM - Add any later years that may need to be filled
+    cdl_annual_remap_years.append([2023])
     year_min = 1997
     for year in list(range(2007, year_min-1, -1)):
         cdl_annual_remap_years.append([year+1, year])
-    # print(cdl_annual_remap_years)
-    # input('ENTER')
 
     if states == ['ALL']:
         # 'AL' is not included since there is not an Alabama field shapefile

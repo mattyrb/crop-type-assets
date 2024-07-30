@@ -52,8 +52,8 @@ The crop type remappings are different for California since we are currently usi
 #### Other States
 
 * pre-2008 - Use remapped annual 2008 CDL for years prior to 2008
-* 2008-2022 - Use remapped annual CDL
-* post-2022 - Use remapped annual 2022 CDL for all years after 2022
+* 2008-2023 - Use remapped annual CDL
+* post-2023 - Use remapped annual 2023 CDL for all years after 2023
 
 ## Replace bad CDL crop type values in New Mexico and Colorado
 

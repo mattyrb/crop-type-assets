@@ -55,24 +55,24 @@ def main(
     logging.info('\nBuild crop type MGRS tiles from the crop feature collections')
 
     # Hardcoded parameters
-    export_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2023a'
+    project_id = 'projects/openet/assets'
+
+    export_coll_id = f'{project_id}/crop_type/v2023a'
     # export_band_name = 'crop_type'
 
-    crop_type_folder_id = ('projects/earthengine-legacy/assets/'
-                           'projects/openet/featureCollections/2024-01-08')
-    # crop_type_folder_id = ('projects/earthengine-legacy/assets/'
-    #                        'projects/openet/featureCollections/temp')
+    crop_type_folder_id = f'{project_id}/features/fields/2024-02-01'
+    # crop_type_folder_id = f'{project_id}/features/fields/temp'
 
     # Using ERA5-Land MGRS tiles to avoid clipping outside CONUS
-    mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zones'
-    mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/global_era5land/zone_mask'
-    # mgrs_ftr_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zones'
-    # mgrs_mask_coll_id = 'projects/earthengine-legacy/assets/projects/openet/mgrs/conus_gridmet/zone_mask'
+    mgrs_ftr_coll_id = f'{project_id}/mgrs/global/era5land/zones'
+    mgrs_mask_coll_id = f'{project_id}/mgrs/global/era5land/zone_mask'
+    # mgrs_ftr_coll_id = f'{project_id}/mgrs/conus/gridmet/zones'
+    # mgrs_mask_coll_id = f'{project_id}/mgrs/conus/gridmet/zone_mask'
 
     cdl_coll_id = 'USDA/NASS/CDL'
 
     # California specific crop type images built from LandIQ crop mapping data
-    ca_coll_id = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
+    ca_coll_id = f'{project_id}/crop_type/california'
 
     # The states collection is being used to select the field collections (by name)
     states_coll_id = 'TIGER/2018/States'

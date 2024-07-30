@@ -55,7 +55,10 @@ def main(years, overwrite_flag=False):
                            'i15_Crop_Mapping_2022_Provisional.shp'),
     }
 
-    collection_folder = 'projects/earthengine-legacy/assets/projects/openet/crop_type/california'
+
+    project_id = 'projects/openet/assets'
+
+    collection_folder = f'{project_id}/crop_type/california'
 
     band_name = 'cropland'
 

@@ -37,12 +37,12 @@ def main(states, years=[], overwrite_flag=False, gee_key_file=None):
     logging.info('\nExport field crop type stats files by state')
 
     cdl_coll_id = 'USDA/NASS/CDL'
-    ca_coll_id = 'projects/openet/crop_type/california'
+    ca_coll_id = 'projects/openet/assets/crop_type/california'
 
-    field_folder_id = 'projects/earthengine-legacy/assets/' \
-                      'projects/openet/featureCollections/temp'
-    # field_folder_id = 'projects/earthengine-legacy/assets/' \
-    #                   'projects/openet/featureCollections/2023-12-07'
+    project_id = 'projects/openet/assets'
+
+    field_folder_id = f'{project_id}/features/fields/temp'
+    # field_folder_id = f'{project_id}/features/fields/2024-02-01'
 
     bucket_name = 'openet'
     bucket_folder = 'crop_type'
@@ -67,7 +67,7 @@ def main(states, years=[], overwrite_flag=False, gee_key_file=None):
     # This CDL start year is for the full CONUS images, but CDL does exist for
     #   some states back to 1997 (see cdl_year_states dictionary below)
     cdl_year_min = 2008
-    cdl_year_max = 2022
+    cdl_year_max = 2023
 
     # Min/max year range to process
     year_min = 1997
@@ -509,7 +509,7 @@ def main(states, years=[], overwrite_flag=False, gee_key_file=None):
             # Select the CDL image to use
             # For California, always use the annual remapped CDL
             # Use a 2008 remapped annual crop image for all pre-2008 years
-            # Use a 2022 remapped annual crop image for all post-2022 years
+            # Use a 2023 remapped annual crop image for all post-2023 years
             cdl_img_id = f'{cdl_coll_id}/{min(max(year, cdl_year_min), cdl_year_max)}'
             # # CGM - Don't need to check cdl_state_years since California 2007
             # #   image is not being used anymore
