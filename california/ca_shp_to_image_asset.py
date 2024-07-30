@@ -48,9 +48,7 @@ def main(years, overwrite_flag=False):
         2018: os.path.join(src_ws, 'i15_Crop_Mapping_2018_SHP', 'i15_Crop_Mapping_2018.shp'),
         2019: os.path.join(src_ws, 'i15_Crop_Mapping_2019', 'i15_Crop_Mapping_2019.shp'),
         2020: os.path.join(src_ws, 'i15_Crop_Mapping_2020', 'i15_Crop_Mapping_2020.shp'),
-        # 2021: os.path.join(src_ws, 'i15_Crop_Mapping_2021', 'i15_Crop_Mapping_2021.shp'),
-        2021: os.path.join(src_ws, 'i15_Crop_Mapping_2021_Provisional_SHP',
-                           'i15_Crop_Mapping_2021_Provisional.shp'),
+        2021: os.path.join(src_ws, 'i15_Crop_Mapping_2021', 'i15_Crop_Mapping_2021.shp'),
         2022: os.path.join(src_ws, 'i15_Crop_Mapping_2022_Provisional_SHP',
                            'i15_Crop_Mapping_2022_Provisional.shp'),
     }
