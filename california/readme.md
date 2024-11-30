@@ -7,4 +7,4 @@ Then run the "ca_shp_to_image_asset.py" tool to convert the shapefiles to GEE im
 
 ### Remap tables
 
-There are separate remap tables for each year.  This should make it easier to support adding future years or to make year specific changes.  The remaps for 2014 and 2016 are identical, and the remaps for 2018-2021 are basically the same except for some classes that were in the metadata but not present in the earlier year shapefiles.
+There are separate remap tables for each year.  This should make it easier to support adding future years or to make year specific changes.  The remaps for 2014 and 2016 are identical, and the remaps for 2018-2022 are basically the same except for some classes that were in the metadata but not present in the earlier year shapefiles.
