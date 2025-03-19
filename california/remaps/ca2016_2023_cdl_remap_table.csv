@@ -58,7 +58,7 @@ I2,61,CA:Idle - New lands being prepared for crop production | CDL:Fallow / Idle
 I4,61,CA:Idle long term land consistently idle for four or more years | CDL:Fallow / Idle Cropland
 NR,195,CA:Riparian Vegetation | CDL:Herbaceous Wetlands
 NR1,195,"CA:Marsh lands, tules and sedges | CDL:Herbaceous Wetlands"
-NR2,176,CA:Natural high water table meadow | CDL:Grass/Pasture
+NR2,37,CA:Natural high water table meadow | CDL:Grass Hay
 NR3,190,"CA:Trees, shrubs or other larger stream side or watercourse vegetation | CDL:Woody Wetlands"
 NR4,195,"CA:Seasonal duck marsh, dry or only partially wet during summer | CDL:Herbaceous Wetlands"
 NR5,195,"CA:Permanent duck marsh, flooded during summer | CDL:Herbaceous Wetlands"
