@@ -1,0 +1,73 @@
+IN,OUT,Note
+F16,1,
+F1,2,
+R1,3,Rice
+R2,3,Wild Rice (CDL Rice)
+F12,6,
+G2,23,
+G,25,
+G6,25,
+F2,33,
+P1,36,
+F5,41,
+F10,42,
+T12,43,
+T13,43,
+T31,46,
+C7,47,
+F,47,
+F11,47,
+I2,61,
+T,47,
+T16,47,
+T17,47,
+T18,47,
+T32,47,CGM In 2021 file but not listed in metadata
+YP,47,"LAndIQ ""catch-all"" for polygons without a subclass"
+T9,48,
+T10,49,
+T15,54,
+P7,59,Turf Farms (CDL Sod/Grass Seed)
+UL2,59,Golf course – irrigated (CDL Sod/Grass Seed)
+I1,61,
+I4,61,Idle long term land consistently idle for four or more years (CDL Fallow)
+X,61,Not cropped or unclassified (CDL Fallow)
+D3,66,
+D5,67,
+D1,68,
+V,69,
+V2,69,
+C4,71,Dates (CDL Other Tree Crops)
+C8,71,Kiwis (CDL Other Tree Crops)
+C10,71,Eucalyptus (CDL Other Tree Crops)
+D17,71,CGM In 2021 file but not listed in metadata
+D,71,Deciduous fruits and nuts (CDL Other Tree Crops)
+C2,72,Lemons (CDL Citrus)
+C3,72,Oranges (CDL Citrus)
+C,72,Citrus and subtropical (CDL Citrus)
+D12,75,Almonds
+D13,76,Walnuts
+D6,77,Pears
+U,82,Developed
+T27,122,Greenhouse (CDL Developed/Low Intensity)
+D10,71,Miscellaneous deciduous (CDL Other Tree Crops)
+D11,71,Mixed deciduous (CDL Other Tree Crops)
+P,37,Pasture (CDL Other Hay/Non Alfalfa)
+P3,37,Mixed pasture (CDL Other Hay/Non Alfalfa)
+P4,37,Native pasture (CDL Other Hay/Non Alfalfa)
+P5,37,Induced high water table native pasture (CDL Other Hay/Non Alfalfa)
+P6,37,Miscellaneous grasses (CDL Other Hay/Non Alfalfa)
+D14,204,Pistachios
+T6,206,Carrots
+D8,210,Prunes
+C6,211,Olives
+T4,214,Broccoli
+C5,215,Avocados
+T21,216,Peppers
+D15,217,Pomegranates
+D7,220,Plums
+D16,220,Plums Prunes or Apricots grouped for remote sensing only (CDL Plums)
+T20,221,Strawberries
+D2,223,Apricots
+T30,227,Lettuce
+T19,242,Blueberries
