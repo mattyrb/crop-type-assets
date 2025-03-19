@@ -20,7 +20,7 @@ PROJECT_NAME = 'openet'
 STORAGE_CLIENT = storage.Client(project=PROJECT_NAME)
 BUCKET_NAME = 'openet_temp'
 BUCKET_FOLDER = 'cadwr'
-YEARS = [2014, 2016, 2018, 2019, 2020, 2021, 2022, 2023]
+YEARS = []
 
 
 def main(YEARS, overwrite_flag=False):
@@ -40,6 +40,9 @@ def main(YEARS, overwrite_flag=False):
     shp_ws = os.path.join(workspace, 'shapefiles')
     tif_ws = os.path.join(workspace, 'images')
     map_ws = os.path.join(workspace, 'remaps')
+
+    if not YEARS:
+        YEARS = [2014, 2016, 2018, 2019, 2020, 2021, 2022, 2023]
 
     # Hardcoding the shapefile folders and names for now since they are all slightly different
     src_paths = {
