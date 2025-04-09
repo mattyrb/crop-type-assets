@@ -62,12 +62,12 @@ NR2,37,CA:Natural high water table meadow | CDL:Grass Hay
 NR3,190,"CA:Trees, shrubs or other larger stream side or watercourse vegetation | CDL:Woody Wetlands"
 NR4,195,"CA:Seasonal duck marsh, dry or only partially wet during summer | CDL:Herbaceous Wetlands"
 NR5,195,"CA:Permanent duck marsh, flooded during summer | CDL:Herbaceous Wetlands"
-P,62,CA:Pasture (CDL Other Hay/Non Alfalfa) | CDL:Pasture/Grass
+P,37,CA:Pasture (CDL Other Hay/Non Alfalfa) | CDL:Grass Hay
 P1,36,CA:Alfalfa and alfalfa mixtures | CDL:Alfalfa
 P10,37,CA:Klein grass | CDL:Grass Hay
 P2,58,CA:Clover | CDL:Clover / Wildflowers
-P3,62,CA:Mixed pasture | CDL:Pasture/Grass
-P4,62,CA:Native pasture | CDL:Pasture/Grass
+P3,37,CA:Mixed pasture | CDL:Grass Hay
+P4,37,CA:Native pasture | CDL:Grass Hay
 P5,37,CA:Induced high water table native pasture (CDL Other Hay/Non Alfalfa) | CDL:Grass Hay
 P6,37,CA:Miscellaneous grasses (CDL Other Hay/Non Alfalfa) | CDL:Grass Hay
 P7,59,CA:Turf Farms | CDL:Sod/Grass Seed
