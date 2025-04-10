@@ -36,7 +36,7 @@ The crop type tool are currently assuming that the crop type fields are named "C
 
 ## Output Collection ID
 
-The crop_type images are being written to image collections in the "projects/openet/crop_type" folder.  The image collections are named based on the last year of CDL data used following the pattern "vYYYYa", where "YYYY" is the four digit year and the trailing letter is used to track versions.  Separate images are created for each MGRS tile and for each year.  The naming of the image ID is currently "<MGRS_ID>\_<YEAR_DATE>" (e.g. "10SFJ_20170101").
+The crop_type images are being written to image collections in the "projects/openet/assets/crop_type" folder.  The image collections are named based on the last year of CDL data used following the pattern "vYYYYa", where "YYYY" is the four digit year and the trailing letter is used to track versions.  Separate images are created for each MGRS tile and for each year.  The naming of the image ID is currently "<MGRS_ID>\_<YEAR_DATE>" (e.g. "10SFJ_20170101").
 
 The most recent complete version of the crop type image assets is in the collection:
 ```
